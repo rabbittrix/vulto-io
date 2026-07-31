@@ -118,7 +118,8 @@
     "imports": {
       "react": "https://esm.sh/react@18.3.1",
       "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
-      "framer-motion": "https://esm.sh/framer-motion@11.15.0?deps=react@18.3.1,react-dom@18.3.1"
+      "framer-motion": "https://esm.sh/framer-motion@11.15.0?deps=react@18.3.1,react-dom@18.3.1",
+      "qrcode": "https://esm.sh/qrcode@1.5.4"
     }
   }
   </script>
@@ -127,12 +128,16 @@
     import React, { useState, useCallback, useEffect } from "react";
     import { createRoot } from "react-dom/client";
     import { motion, AnimatePresence } from "framer-motion";
+    import QRCode from "qrcode";
 
     const h = React.createElement;
 
     const AUTHOR = { name: "Roberto de Souza", email: "rabbittrix@hotmail.com" };
     const BANK = { iban: "BE72 9670 8136 8616", bic: "TRWIBEB1XXX" };
     const PIX_KEY = "2417f0d5-b9e3-4b80-9ab0-70834da5d2a9";
+    // Prefer generating the QR at runtime; keep a public asset as offline fallback.
+    const PIX_QR_ASSET =
+      "https://raw.githubusercontent.com/rabbittrix/vulto-io/main/assets/pix_qr.png";
     // Site-hosted installers on the public repo (works even if Pages is on a private mirror).
     const PUBLIC_REPO = "rabbittrix/vulto-io";
     const RELEASES_PAGE = `https://github.com/${PUBLIC_REPO}/releases/latest`;
@@ -264,6 +269,7 @@
 
     function PaymentModal({ open, onClose, tier }) {
       const [tab, setTab] = useState("intl");
+      const [pixQrSrc, setPixQrSrc] = useState(PIX_QR_ASSET);
       const amount = tier === "business" ? "$34.99" : "$19.99";
       const tierName = tier === "business" ? "Business/Dev" : "Personal";
       const mailto = `mailto:${AUTHOR.email}?subject=${encodeURIComponent(
@@ -271,6 +277,26 @@
       )}&body=${encodeURIComponent(
         `Hello Roberto,\n\nI paid ${amount} USD for a Vulto ${tierName} license.\n\nUser Hash:\n[PASTE FROM UNLOCK SCREEN]\n\nPlease send my activation key.\n\nThanks.`
       )}`;
+
+      useEffect(() => {
+        if (!open) return;
+        let alive = true;
+        QRCode.toDataURL(PIX_KEY, {
+          width: 280,
+          margin: 2,
+          errorCorrectionLevel: "M",
+          color: { dark: "#000000", light: "#ffffff" },
+        })
+          .then((url) => {
+            if (alive) setPixQrSrc(url);
+          })
+          .catch(() => {
+            if (alive) setPixQrSrc(PIX_QR_ASSET);
+          });
+        return () => {
+          alive = false;
+        };
+      }, [open]);
 
       return h(
         AnimatePresence,
@@ -380,10 +406,15 @@
                     "div",
                     { className: "flex flex-col sm:flex-row gap-4" },
                     h("img", {
-                      src: "./assets/pix_qr.png",
+                      src: pixQrSrc,
                       alt: "PIX QR Code",
                       className:
-                        "w-36 h-36 object-contain bg-white p-1 border border-cyan/30 shadow-[0_0_20px_rgba(0,243,255,0.2)]",
+                        "w-36 h-36 object-contain bg-white p-1 border border-cyan/30 shadow-[0_0_20px_rgba(0,243,255,0.2)] shrink-0",
+                      onError: (e) => {
+                        if (e.currentTarget.src !== PIX_QR_ASSET) {
+                          e.currentTarget.src = PIX_QR_ASSET;
+                        }
+                      },
                     }),
                     h(
                       "div",
