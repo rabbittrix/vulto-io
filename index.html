@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vulto — The Last File Utility You’ll Ever Need</title>
-  <meta name="description" content="Vulto — ultra-fast neon file utility. Compress, extract, merge, split. Personal $19.99 · Business $34.99." />
+  <title>Vulto — Reclaim your time. Secure your legacy.</title>
+  <meta name="description" content="Vulto: Rust monolith for zero-latency I/O. .vlt v3 · Vault AES-256-GCM · Merge/Split · Enterprise grid. Personal $19.99 · Business $34.99." />
   <meta name="theme-color" content="#050505" />
   <link rel="icon" href="./assets/vulto-icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -25,25 +25,14 @@
             display: ["Orbitron", "sans-serif"],
             mono: ["IBM Plex Mono", "ui-monospace", "monospace"],
           },
-          boxShadow: {
-            cyan: "0 0 40px rgba(0,243,255,0.35)",
-            magenta: "0 0 40px rgba(255,0,255,0.35)",
-          },
         },
       },
     };
   </script>
   <style>
-    :root {
-      --void: #050505;
-      --cyan: #00f3ff;
-      --magenta: #ff00ff;
-    }
+    :root { --void: #050505; --cyan: #00f3ff; --magenta: #ff00ff; }
     html { scroll-behavior: smooth; }
-    body {
-      background: var(--void);
-      color: #f4f4f5;
-    }
+    body { background: var(--void); color: #f4f4f5; }
     .grid-neon {
       background-image:
         linear-gradient(rgba(0, 243, 255, 0.04) 1px, transparent 1px),
@@ -54,7 +43,7 @@
       background:
         radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0, 243, 255, 0.18), transparent 55%),
         radial-gradient(ellipse 60% 40% at 85% 20%, rgba(255, 0, 255, 0.12), transparent 50%),
-        radial-gradient(ellipse 50% 35% at 10% 70%, rgba(184, 255, 60, 0.06), transparent 45%);
+        radial-gradient(ellipse 50% 35% at 15% 80%, rgba(184, 255, 60, 0.06), transparent 45%);
     }
     .btn-primary {
       background: linear-gradient(90deg, #00f3ff, #00c8d4);
@@ -67,12 +56,26 @@
       color: #ff00ff;
       box-shadow: 0 0 18px rgba(255, 0, 255, 0.15);
     }
+    .panel {
+      border: 1px solid rgba(0, 243, 255, 0.18);
+      background: rgba(0, 0, 0, 0.45);
+      box-shadow: inset 0 0 40px rgba(0, 243, 255, 0.03);
+    }
+    .panel-mag {
+      border-color: rgba(255, 0, 255, 0.28);
+      box-shadow: inset 0 0 40px rgba(255, 0, 255, 0.04);
+    }
+    .term {
+      border: 1px solid rgba(0, 243, 255, 0.25);
+      background: #03080a;
+      box-shadow: 0 0 24px rgba(0, 243, 255, 0.08), inset 0 0 30px rgba(0, 243, 255, 0.03);
+    }
     .price-glow:hover {
       border-color: rgba(0, 243, 255, 0.55);
       box-shadow: 0 0 32px rgba(0, 243, 255, 0.2);
     }
     .modal-backdrop {
-      background: rgba(5, 5, 5, 0.82);
+      background: rgba(5, 5, 5, 0.85);
       backdrop-filter: blur(10px);
     }
     @keyframes pulse-line {
@@ -80,13 +83,34 @@
       50% { opacity: 1; }
     }
     .pulse-line { animation: pulse-line 3s ease-in-out infinite; }
-    .sr-only {
-      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-      overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+
+    /* Background noise / film grain */
+    .bg-noise {
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      opacity: 0.07;
+      mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 180px 180px;
+      animation: noise-shift 0.4s steps(2) infinite;
+    }
+    @keyframes noise-shift {
+      0% { transform: translate(0, 0); }
+      25% { transform: translate(-1.5%, 1%); }
+      50% { transform: translate(1%, -1.5%); }
+      75% { transform: translate(-1%, -0.5%); }
+      100% { transform: translate(0.5%, 1%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .bg-noise { animation: none; }
     }
   </style>
 </head>
 <body class="font-mono antialiased overflow-x-hidden">
+  <div class="bg-noise" aria-hidden="true"></div>
   <div id="root"></div>
 
   <script type="importmap">
@@ -106,22 +130,11 @@
 
     const h = React.createElement;
 
-    const AUTHOR = {
-      name: "Roberto de Souza",
-      email: "rabbittrix@hotmail.com",
-    };
-
-    const BANK = {
-      iban: "BE72 9670 8136 8616",
-      bic: "TRWIBEB1XXX",
-    };
-
+    const AUTHOR = { name: "Roberto de Souza", email: "rabbittrix@hotmail.com" };
+    const BANK = { iban: "BE72 9670 8136 8616", bic: "TRWIBEB1XXX" };
     const PIX_KEY = "2417f0d5-b9e3-4b80-9ab0-70834da5d2a9";
-
     const RELEASE_BASE =
       "https://github.com/rabbittrix/vulto-source/releases/latest/download";
-
-    // Update these filenames to match your GitHub Release assets after tagging.
     const DOWNLOADS = {
       windows: `${RELEASE_BASE}/Vulto_1.0.0_x64-setup.exe`,
       windowsMsi: `${RELEASE_BASE}/Vulto_1.0.0_x64_en-US.msi`,
@@ -165,7 +178,7 @@
       };
       return h(
         "div",
-        { className: "border border-cyan/30 bg-black/50 p-3" },
+        { className: "border border-cyan/40 bg-black/60 p-3 shadow-[0_0_16px_rgba(0,243,255,0.12)]" },
         h(
           "div",
           { className: "flex items-center justify-between gap-2 mb-1" },
@@ -185,11 +198,37 @@
             copied ? "Copied!" : copyLabel
           )
         ),
+        h("p", { className: "font-mono text-sm break-all text-cyan select-all" }, value)
+      );
+    }
+
+    function TermBlock({ children }) {
+      return h(
+        "pre",
+        {
+          className:
+            "term p-4 text-[11px] sm:text-xs leading-relaxed text-cyan/90 overflow-x-auto whitespace-pre",
+        },
+        children
+      );
+    }
+
+    function SectionTitle({ kicker, title, sub }) {
+      return h(
+        "div",
+        { className: "mb-10 max-w-2xl" },
+        kicker &&
+          h(
+            "p",
+            { className: "text-[10px] font-display tracking-[0.3em] text-magenta mb-2" },
+            kicker
+          ),
         h(
-          "p",
-          { className: "font-mono text-sm break-all text-cyan select-all" },
-          value
-        )
+          "h2",
+          { className: "font-display text-2xl sm:text-3xl tracking-[0.18em] text-white" },
+          title
+        ),
+        sub && h("p", { className: "mt-3 text-sm text-white/50 leading-relaxed" }, sub)
       );
     }
 
@@ -200,7 +239,7 @@
       const mailto = `mailto:${AUTHOR.email}?subject=${encodeURIComponent(
         `Vulto ${tierName} License`
       )}&body=${encodeURIComponent(
-        `Hello Roberto,\n\nI paid ${amount} USD for a Vulto ${tierName} license.\n\nUser Hash:\n[PASTE FROM APP]\n\nPlease send my activation key.\n\nThanks.`
+        `Hello Roberto,\n\nI paid ${amount} USD for a Vulto ${tierName} license.\n\nUser Hash:\n[PASTE FROM UNLOCK SCREEN]\n\nPlease send my activation key.\n\nThanks.`
       )}`;
 
       return h(
@@ -215,10 +254,7 @@
               animate: { opacity: 1 },
               exit: { opacity: 0 },
             },
-            h("div", {
-              className: "absolute inset-0 modal-backdrop",
-              onClick: onClose,
-            }),
+            h("div", { className: "absolute inset-0 modal-backdrop", onClick: onClose }),
             h(
               motion.div,
               {
@@ -226,7 +262,7 @@
                 animate: { scale: 1, y: 0, opacity: 1 },
                 exit: { scale: 0.96, opacity: 0 },
                 className:
-                  "relative w-full max-w-2xl max-h-[92vh] overflow-y-auto border border-magenta/40 bg-[#080808] shadow-magenta p-6",
+                  "relative w-full max-w-2xl max-h-[92vh] overflow-y-auto border border-magenta/40 bg-[#080808] shadow-[0_0_40px_rgba(255,0,255,0.25)] p-6",
               },
               h(
                 "div",
@@ -234,6 +270,11 @@
                 h(
                   "div",
                   null,
+                  h(
+                    "p",
+                    { className: "text-[10px] font-display tracking-[0.3em] text-cyan mb-1" },
+                    "CYBER-FINANCIAL RAIL"
+                  ),
                   h(
                     "h2",
                     { className: "font-display text-2xl tracking-widest text-magenta" },
@@ -267,9 +308,7 @@
                     type: "button",
                     onClick: () => setTab("intl"),
                     className: `px-3 py-2 text-[10px] font-display tracking-widest uppercase ${
-                      tab === "intl"
-                        ? "text-lime border-b-2 border-lime"
-                        : "text-white/40"
+                      tab === "intl" ? "text-lime border-b-2 border-lime" : "text-white/40"
                     }`,
                   },
                   "International"
@@ -280,9 +319,7 @@
                     type: "button",
                     onClick: () => setTab("brasil"),
                     className: `px-3 py-2 text-[10px] font-display tracking-widest uppercase flex items-center gap-2 ${
-                      tab === "brasil"
-                        ? "text-lime border-b-2 border-lime"
-                        : "text-white/40"
+                      tab === "brasil" ? "text-lime border-b-2 border-lime" : "text-white/40"
                     }`,
                   },
                   h(BrazilFlag),
@@ -299,9 +336,13 @@
                       "div",
                       {
                         className:
-                          "border border-cyan/20 px-3 py-2 flex justify-between text-sm",
+                          "border border-lime/30 bg-lime/5 px-3 py-2 flex justify-between text-sm",
                       },
-                      h("span", { className: "text-white/45 text-[10px] tracking-widest uppercase" }, "Amount"),
+                      h(
+                        "span",
+                        { className: "text-white/45 text-[10px] tracking-widest uppercase" },
+                        "Amount"
+                      ),
                       h("span", { className: "text-lime" }, `${amount} USD`)
                     )
                   )
@@ -311,7 +352,8 @@
                     h("img", {
                       src: "./assets/pix_qr.png",
                       alt: "PIX QR Code",
-                      className: "w-36 h-36 object-contain bg-white p-1 border border-cyan/30",
+                      className:
+                        "w-36 h-36 object-contain bg-white p-1 border border-cyan/30 shadow-[0_0_20px_rgba(0,243,255,0.2)]",
                     }),
                     h(
                       "div",
@@ -325,44 +367,48 @@
                         "div",
                         {
                           className:
-                            "border border-cyan/20 px-3 py-2 flex justify-between text-sm",
+                            "border border-lime/30 bg-lime/5 px-3 py-2 flex justify-between text-sm",
                         },
-                        h("span", { className: "text-white/45 text-[10px] tracking-widest uppercase" }, "Valor"),
+                        h(
+                          "span",
+                          { className: "text-white/45 text-[10px] tracking-widest uppercase" },
+                          "Valor"
+                        ),
                         h("span", { className: "text-lime" }, `${amount} USD`)
                       )
                     )
                   ),
               h(
                 "div",
-                { className: "mt-5 pt-4 border-t border-white/10 space-y-2 text-[12px] text-white/70 leading-relaxed" },
+                {
+                  className:
+                    "mt-5 pt-4 border-t border-white/10 space-y-2 text-[12px] text-white/70 leading-relaxed",
+                },
                 h(
                   "p",
                   null,
-                  h("span", { className: "text-cyan" }, "Step 1: "),
-                  `Pay ${amount} via the tab above.`
+                  h("span", { className: "text-cyan" }, "01 · "),
+                  `Transmit ${amount} on the rail above.`
                 ),
                 h(
                   "p",
                   null,
-                  h("span", { className: "text-cyan" }, "Step 2: "),
-                  "Open Vulto → License and copy your ",
+                  h("span", { className: "text-cyan" }, "02 · "),
+                  "Open Vulto → Unlock · copy your ",
                   h("strong", { className: "text-white" }, "User Hash"),
-                  "."
+                  " (KRLY-salted fingerprint)."
                 ),
                 h(
                   "p",
                   null,
-                  h("span", { className: "text-cyan" }, "Step 3: "),
-                  "Email the User Hash to ",
+                  h("span", { className: "text-cyan" }, "03 · "),
+                  "Email the hash to ",
                   h(
                     "a",
-                    {
-                      href: mailto,
-                      className: "text-magenta underline hover:text-lime",
-                    },
+                    { href: mailto, className: "text-magenta underline hover:text-lime" },
                     AUTHOR.email
                   ),
-                  " to receive your activation key."
+                  " — receive your activation key."
                 )
               )
             )
@@ -373,11 +419,37 @@
     function App() {
       const [modalOpen, setModalOpen] = useState(false);
       const [tier, setTier] = useState("personal");
-
       const openPay = useCallback((t) => {
         setTier(t);
         setModalOpen(true);
       }, []);
+
+      const levels = [
+        {
+          emoji: "💠",
+          name: "LIGHTSPEED",
+          range: "1–3",
+          text: "Instantaneous frame-based streaming. Ideal for 100GB+ backups where time is the only variable.",
+        },
+        {
+          emoji: "🧬",
+          name: "NEON PULSE",
+          range: "4–10",
+          text: "The balanced sweet spot. Optimized for daily productivity.",
+        },
+        {
+          emoji: "☢️",
+          name: "OVERDRIVE",
+          range: "11–19",
+          text: "Deep-block scanning for maximum bit-reduction.",
+        },
+        {
+          emoji: "🌌",
+          name: "SINGULARITY",
+          range: "20–22",
+          text: "The physical limit of data density. Use this when storage costs are the enemy.",
+        },
+      ];
 
       return h(
         React.Fragment,
@@ -394,11 +466,7 @@
             h(
               "a",
               { href: "#top", className: "flex items-center gap-3" },
-              h("img", {
-                src: "./assets/squirrel.svg",
-                alt: "",
-                className: "w-10 h-10",
-              }),
+              h("img", { src: "./assets/squirrel.svg", alt: "", className: "w-10 h-10" }),
               h(
                 "span",
                 {
@@ -410,27 +478,31 @@
             ),
             h(
               "nav",
-              { className: "hidden sm:flex items-center gap-6 text-[11px] tracking-widest uppercase text-white/50" },
-              h("a", { href: "#pricing", className: "hover:text-cyan" }, "Pricing"),
-              h("a", { href: "#activate", className: "hover:text-cyan" }, "Activate"),
+              {
+                className:
+                  "hidden md:flex items-center gap-5 text-[10px] tracking-widest uppercase text-white/50",
+              },
+              h("a", { href: "#engine", className: "hover:text-cyan" }, "Engine"),
+              h("a", { href: "#spectrum", className: "hover:text-cyan" }, "Spectrum"),
+              h("a", { href: "#vault", className: "hover:text-cyan" }, "Vault"),
+              h("a", { href: "#ops", className: "hover:text-cyan" }, "Ops"),
+              h("a", { href: "#license", className: "hover:text-cyan" }, "License"),
               h(
                 "a",
-                {
-                  href: DOWNLOADS.windows,
-                  className: "text-cyan hover:text-white",
-                },
+                { href: DOWNLOADS.windows, className: "text-cyan hover:text-white" },
                 "Download"
               )
             )
           )
         ),
 
-        // HERO — one composition
+        // HERO
         h(
           "section",
           {
             id: "top",
-            className: "relative min-h-[100svh] flex flex-col justify-center hero-glow grid-neon overflow-hidden",
+            className:
+              "relative min-h-[100svh] flex flex-col justify-center hero-glow grid-neon overflow-hidden",
           },
           h("div", {
             className:
@@ -440,7 +512,7 @@
             "div",
             {
               className:
-                "relative z-10 max-w-6xl mx-auto px-5 py-20 md:py-28 grid md:grid-cols-[1.1fr_0.9fr] gap-12 items-center",
+                "relative z-10 max-w-6xl mx-auto px-5 py-20 md:py-28 grid md:grid-cols-[1.15fr_0.85fr] gap-12 items-center",
             },
             h(
               motion.div,
@@ -453,7 +525,7 @@
                 "p",
                 {
                   className:
-                    "font-display text-5xl sm:text-6xl md:text-7xl tracking-[0.18em] text-cyan mb-6 drop-shadow-[0_0_28px_rgba(0,243,255,0.45)]",
+                    "font-display text-5xl sm:text-6xl md:text-7xl tracking-[0.18em] text-cyan mb-5 drop-shadow-[0_0_28px_rgba(0,243,255,0.45)]",
                 },
                 "VULTO"
               ),
@@ -461,14 +533,16 @@
                 "h1",
                 {
                   className:
-                    "font-display text-2xl sm:text-3xl md:text-4xl tracking-wide text-white leading-tight max-w-xl",
+                    "font-display text-xl sm:text-2xl md:text-3xl tracking-wide text-white leading-snug max-w-xl",
                 },
-                "The Last File Utility You’ll Ever Need"
+                "Reclaim your time. Secure your legacy."
               ),
               h(
                 "p",
-                { className: "mt-4 text-white/55 text-base md:text-lg max-w-md" },
-                "Faster than the speed of light."
+                { className: "mt-4 text-white/55 text-sm md:text-base max-w-lg leading-relaxed" },
+                "A Rust monolith for zero-latency I/O. Not another zip GUI — a re-engineering of your data into the ",
+                h("span", { className: "text-cyan" }, ".vlt"),
+                " Singularity."
               ),
               h(
                 "div",
@@ -487,11 +561,11 @@
                 h(
                   "a",
                   {
-                    href: "#pricing",
+                    href: "#license",
                     className:
                       "btn-ghost inline-flex items-center px-6 py-3.5 font-display text-sm tracking-[0.2em] uppercase",
                   },
-                  "View pricing"
+                  "Unlock tiers"
                 )
               ),
               h(
@@ -500,7 +574,11 @@
                 "Also: ",
                 h("a", { href: DOWNLOADS.windowsMsi, className: "text-cyan/70 hover:text-cyan" }, "MSI"),
                 " · ",
-                h("a", { href: DOWNLOADS.linuxAppImage, className: "text-cyan/70 hover:text-cyan" }, "AppImage"),
+                h(
+                  "a",
+                  { href: DOWNLOADS.linuxAppImage, className: "text-cyan/70 hover:text-cyan" },
+                  "AppImage"
+                ),
                 " · ",
                 h("a", { href: DOWNLOADS.linuxDeb, className: "text-cyan/70 hover:text-cyan" }, ".deb")
               )
@@ -510,16 +588,13 @@
               {
                 initial: { opacity: 0, scale: 0.92 },
                 animate: { opacity: 1, scale: 1 },
-                transition: { duration: 0.85, delay: 0.15 },
+                transition: { duration: 0.85, delay: 0.12 },
                 className: "relative flex justify-center md:justify-end",
               },
-              h("div", {
-                className:
-                  "absolute inset-8 rounded-full bg-cyan/10 blur-3xl",
-              }),
+              h("div", { className: "absolute inset-8 rounded-full bg-cyan/10 blur-3xl" }),
               h("img", {
                 src: "./assets/vulto-icon.png",
-                alt: "Vulto app",
+                alt: "Vulto",
                 className:
                   "relative w-64 sm:w-80 md:w-[22rem] drop-shadow-[0_0_60px_rgba(0,243,255,0.35)]",
               })
@@ -527,57 +602,207 @@
           )
         ),
 
-        // PRICING
+        // CORE ENGINE
         h(
           "section",
-          { id: "pricing", className: "relative py-24 border-t border-white/5" },
+          { id: "engine", className: "py-24 border-t border-white/5" },
           h(
             "div",
             { className: "max-w-6xl mx-auto px-5" },
-            h(
-              motion.h2,
-              {
-                initial: { opacity: 0, y: 16 },
-                whileInView: { opacity: 1, y: 0 },
-                viewport: { once: true },
-                className:
-                  "font-display text-3xl tracking-[0.2em] text-white mb-3",
-              },
-              "PRICING"
-            ),
-            h(
-              "p",
-              { className: "text-white/50 mb-12 max-w-xl text-sm" },
-              "Basic compress/extract stays free. Unlock advanced power with a one-time license."
-            ),
+            h(SectionTitle, {
+              kicker: "🧬 CORE",
+              title: "THE CORE ENGINE (v3.0)",
+              sub: "A Rust-based monolith designed for zero-latency I/O. Vulto doesn’t just zip files — it re-engineers them into the .vlt standard.",
+            }),
             h(
               "div",
               { className: "grid md:grid-cols-2 gap-6" },
               h(
+                "div",
+                { className: "panel p-6 space-y-3 text-sm text-white/65 leading-relaxed" },
+                h("p", null, "Frame-streamed compression. Rayon-parallel encode. Optional vault isolation."),
+                h(
+                  "p",
+                  null,
+                  "Built for the decade of massive datasets — bare-metal performance with a lightweight Tauri shell."
+                )
+              ),
+              h(TermBlock, null, `STACK     :: Rust engine · Tauri desktop
+I/O       :: Sequential · mmap · chunked stream
+PARALLEL  :: Rayon multi-core
+BUDGET    :: ≤ ~200 MiB on 100GB+ jobs
+SEAL      :: SHA-256 VCHK footer`)
+            )
+          )
+        ),
+
+        // SPECTRUM
+        h(
+          "section",
+          { id: "spectrum", className: "py-24 border-t border-white/5 bg-cyan/[0.02]" },
+          h(
+            "div",
+            { className: "max-w-6xl mx-auto px-5" },
+            h(SectionTitle, {
+              kicker: "💾 SPECTRUM",
+              title: "VULTO LEVELS",
+              sub: "The Compression Spectrum — from instantaneous streaming to the physical limit of density.",
+            }),
+            h(
+              "div",
+              { className: "grid sm:grid-cols-2 gap-4" },
+              levels.map((L, i) =>
+                h(
+                  motion.div,
+                  {
+                    key: L.name,
+                    initial: { opacity: 0, y: 16 },
+                    whileInView: { opacity: 1, y: 0 },
+                    viewport: { once: true },
+                    transition: { delay: i * 0.06 },
+                    className: "panel p-5",
+                  },
+                  h(
+                    "div",
+                    { className: "flex items-baseline justify-between gap-3 mb-2" },
+                    h(
+                      "p",
+                      { className: "font-display text-sm tracking-[0.2em] text-cyan" },
+                      `${L.emoji} ${L.name}`
+                    ),
+                    h("span", { className: "text-[10px] text-lime tracking-widest" }, L.range)
+                  ),
+                  h("p", { className: "text-sm text-white/55 leading-relaxed" }, L.text)
+                )
+              )
+            )
+          )
+        ),
+
+        // VAULT
+        h(
+          "section",
+          { id: "vault", className: "py-24 border-t border-white/5" },
+          h(
+            "div",
+            { className: "max-w-6xl mx-auto px-5" },
+            h(SectionTitle, {
+              kicker: "🛡️ VAULT",
+              title: "SECURITY PROTOCOL",
+              sub: "AES-256-GCM · Argon2id — cryptographically isolated payloads.",
+            }),
+            h(
+              "div",
+              { className: "grid md:grid-cols-2 gap-6 items-start" },
+              h(
+                "blockquote",
+                {
+                  className:
+                    "panel panel-mag p-6 text-base text-white/80 leading-relaxed border-l-2 border-magenta",
+                },
+                "In the Vault, your data is cryptographically isolated. Not even Vulto can see what’s inside without your key."
+              ),
+              h(
+                TermBlock,
+                null,
+                `PROTOCOL  :: AES-256-GCM
+KDF       :: Argon2id
+SCOPE     :: .vlt vault password
+SURFACE   :: local only — no cloud escrow
+TIER      :: Personal+ / active trial`
+              )
+            )
+          )
+        ),
+
+        // OPS
+        h(
+          "section",
+          { id: "ops", className: "py-24 border-t border-white/5 bg-magenta/[0.02]" },
+          h(
+            "div",
+            { className: "max-w-6xl mx-auto px-5" },
+            h(SectionTitle, {
+              kicker: "🔗 OPS",
+              title: "SMART OPERATIONS",
+              sub: "Merge. Split. Enterprise grid. No bloatware dependencies.",
+            }),
+            h(
+              "div",
+              { className: "grid md:grid-cols-2 gap-6" },
+              h(
+                "div",
+                { className: "panel p-6" },
+                h(
+                  "p",
+                  { className: "font-display text-xs tracking-[0.25em] text-cyan mb-3" },
+                  "📄 PDF / DOCX FUSION"
+                ),
+                h(
+                  "p",
+                  { className: "text-sm text-white/60 leading-relaxed" },
+                  "Binary-level stitching of documents. No bloatware, no Adobe, no Word. Just pure data manipulation — pages, ranges, multi-range extract."
+                )
+              ),
+              h(
+                "div",
+                { className: "panel panel-mag p-6" },
+                h(
+                  "p",
+                  { className: "font-display text-xs tracking-[0.25em] text-magenta mb-3" },
+                  "🛠️ ENTERPRISE GRID"
+                ),
+                h(
+                  "p",
+                  { className: "text-sm text-white/60 leading-relaxed" },
+                  "Native handling of .war, .jar, and .ear. Essential for the modern SysAdmin and Architect."
+                )
+              )
+            )
+          )
+        ),
+
+        // LICENSE / GTM
+        h(
+          "section",
+          { id: "license", className: "py-24 border-t border-white/5" },
+          h(
+            "div",
+            { className: "max-w-6xl mx-auto px-5" },
+            h(SectionTitle, {
+              kicker: "☢️ LICENSE",
+              title: "GO-TO-MARKET",
+              sub: "Hardware-bound activation. Your Hash is the digital fingerprint of the machine — salted with KRLY.",
+            }),
+            h(
+              TermBlock,
+              null,
+              `User Hash = SHA-256( machine_id || "KRLY" )
+# Raw machine UID never leaves the Unlock screen.`
+            ),
+            h(
+              "div",
+              { className: "mt-10 grid md:grid-cols-2 gap-6" },
+              h(
                 motion.div,
                 {
-                  initial: { opacity: 0, y: 20 },
+                  initial: { opacity: 0, y: 16 },
                   whileInView: { opacity: 1, y: 0 },
                   viewport: { once: true },
-                  className:
-                    "price-glow border border-white/10 bg-white/[0.02] p-8 transition-all",
+                  className: "price-glow panel p-8 transition-all",
                 },
                 h(
                   "p",
                   { className: "font-display text-xs tracking-[0.25em] text-cyan" },
                   "PERSONAL"
                 ),
-                h(
-                  "p",
-                  { className: "mt-4 font-display text-4xl text-lime" },
-                  "$19.99"
-                ),
+                h("p", { className: "mt-4 font-display text-4xl text-lime" }, "$19.99"),
                 h(
                   "ul",
                   { className: "mt-6 space-y-2 text-sm text-white/60" },
-                  h("li", null, "AES-256 vault encryption"),
-                  h("li", null, "Remove trial notifications"),
-                  h("li", null, "Hardware-bound activation")
+                  h("li", null, "Standard encryption (Vault)"),
+                  h("li", null, "Pro visual kit · no trial nag"),
+                  h("li", null, "Hardware-bound key")
                 ),
                 h(
                   "button",
@@ -587,35 +812,30 @@
                     className:
                       "mt-8 w-full btn-primary py-3 font-display text-xs tracking-[0.2em] uppercase",
                   },
-                  "Buy Personal"
+                  "Acquire Personal"
                 )
               ),
               h(
                 motion.div,
                 {
-                  initial: { opacity: 0, y: 20 },
+                  initial: { opacity: 0, y: 16 },
                   whileInView: { opacity: 1, y: 0 },
                   viewport: { once: true },
                   transition: { delay: 0.08 },
-                  className:
-                    "price-glow border border-magenta/30 bg-magenta/[0.04] p-8 transition-all",
+                  className: "price-glow panel panel-mag p-8 transition-all",
                 },
                 h(
                   "p",
                   { className: "font-display text-xs tracking-[0.25em] text-magenta" },
                   "BUSINESS / DEV"
                 ),
-                h(
-                  "p",
-                  { className: "mt-4 font-display text-4xl text-lime" },
-                  "$34.99"
-                ),
+                h("p", { className: "mt-4 font-display text-4xl text-lime" }, "$34.99"),
                 h(
                   "ul",
                   { className: "mt-6 space-y-2 text-sm text-white/60" },
-                  h("li", null, "Everything in Personal"),
-                  h("li", null, "Merge / Split (PDF · DOCX)"),
-                  h("li", null, "Enterprise formats (.war · .jar · .ear)")
+                  h("li", null, "Full Merge/Split suite"),
+                  h("li", null, "Enterprise formats (.war · .jar · .ear)"),
+                  h("li", null, "Priority Neural Support")
                 ),
                 h(
                   "button",
@@ -625,96 +845,72 @@
                     className:
                       "mt-8 w-full btn-ghost py-3 font-display text-xs tracking-[0.2em] uppercase bg-magenta/10",
                   },
-                  "Buy Business"
+                  "Acquire Business"
                 )
               )
-            )
-          )
-        ),
-
-        // ACTIVATE
-        h(
-          "section",
-          {
-            id: "activate",
-            className: "relative py-24 border-t border-white/5 bg-gradient-to-b from-transparent to-cyan/[0.03]",
-          },
-          h(
-            "div",
-            { className: "max-w-3xl mx-auto px-5" },
-            h(
-              "h2",
-              {
-                className:
-                  "font-display text-3xl tracking-[0.2em] text-white mb-3",
-              },
-              "ACTIVATE"
             ),
             h(
-              "p",
-              { className: "text-white/50 mb-10 text-sm" },
-              "Three steps from payment to unlocked Vulto PRO / BIZ."
-            ),
-            h(
-              "ol",
-              { className: "space-y-6 text-sm text-white/70" },
-              [
-                ["Pay", "Use PIX (Brasil) or International bank transfer from the pricing buttons."],
-                ["Copy User Hash", "In the app: License panel → copy the KRLY User Hash."],
-                [
-                  "Email for your key",
-                  `Send the hash to ${AUTHOR.email} — you’ll receive a hardware-bound activation key.`,
-                ],
-              ].map(([title, body], i) =>
+              "div",
+              { className: "mt-10 panel p-6" },
+              h(
+                "p",
+                { className: "font-display text-[10px] tracking-[0.3em] text-lime mb-4" },
+                "CYBER-FINANCIAL RAILS"
+              ),
+              h(
+                "div",
+                { className: "grid sm:grid-cols-2 gap-4 text-sm" },
                 h(
-                  motion.li,
-                  {
-                    key: title,
-                    initial: { opacity: 0, x: -12 },
-                    whileInView: { opacity: 1, x: 0 },
-                    viewport: { once: true },
-                    transition: { delay: i * 0.08 },
-                    className: "flex gap-4",
-                  },
-                  h(
-                    "span",
-                    {
-                      className:
-                        "shrink-0 w-8 h-8 flex items-center justify-center border border-cyan/40 text-cyan font-display text-xs",
-                    },
-                    String(i + 1)
-                  ),
-                  h(
-                    "div",
-                    null,
-                    h("p", { className: "text-cyan font-display text-xs tracking-widest" }, title),
-                    h("p", { className: "mt-1" }, body)
-                  )
+                  "div",
+                  null,
+                  h("p", { className: "text-white/40 text-[10px] tracking-widest mb-1" }, "PIX · BR"),
+                  h("p", { className: "text-cyan break-all" }, PIX_KEY)
+                ),
+                h(
+                  "div",
+                  null,
+                  h("p", { className: "text-white/40 text-[10px] tracking-widest mb-1" }, "IBAN · INT"),
+                  h("p", { className: "text-cyan" }, BANK.iban),
+                  h("p", { className: "text-cyan/70 text-xs mt-1" }, `BIC ${BANK.bic}`)
                 )
+              ),
+              h(
+                "p",
+                { className: "mt-4 text-xs text-white/45" },
+                "After payment, email your User Hash to ",
+                h(
+                  "a",
+                  {
+                    href: `mailto:${AUTHOR.email}`,
+                    className: "text-magenta underline hover:text-lime",
+                  },
+                  AUTHOR.email
+                ),
+                "."
               )
-            ),
-            h(
-              "a",
-              {
-                href: `mailto:${AUTHOR.email}?subject=${encodeURIComponent("Vulto License Activation")}`,
-                className: "inline-block mt-10 text-magenta underline hover:text-lime text-sm",
-              },
-              AUTHOR.email
             )
           )
         ),
 
         h(
           "footer",
-          { className: "border-t border-white/5 py-8" },
+          { className: "border-t border-white/5 py-10" },
           h(
             "div",
-            {
-              className:
-                "max-w-6xl mx-auto px-5 flex flex-col sm:flex-row justify-between gap-3 text-[11px] text-white/35",
-            },
-            h("p", null, `© ${new Date().getFullYear()} ${AUTHOR.name}. All rights reserved.`),
-            h("p", null, "Vulto.io · Neon-fast. Local-first.")
+            { className: "max-w-6xl mx-auto px-5 text-center space-y-2" },
+            h(
+              "p",
+              {
+                className:
+                  "font-display text-sm tracking-[0.2em] text-cyan drop-shadow-[0_0_12px_rgba(0,243,255,0.35)]",
+              },
+              "Vulto: Reclaim your time. Secure your legacy."
+            ),
+            h(
+              "p",
+              { className: "text-[11px] text-white/35" },
+              `© ${new Date().getFullYear()} ${AUTHOR.name} · rabbittrix@hotmail.com`
+            )
           )
         ),
 
