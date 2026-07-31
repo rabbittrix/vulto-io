@@ -133,13 +133,14 @@
     const AUTHOR = { name: "Roberto de Souza", email: "rabbittrix@hotmail.com" };
     const BANK = { iban: "BE72 9670 8136 8616", bic: "TRWIBEB1XXX" };
     const PIX_KEY = "2417f0d5-b9e3-4b80-9ab0-70834da5d2a9";
-    // Site-hosted installers (always available via Pages). GitHub Releases used when present.
+    // Site-hosted installers on the public repo (works even if Pages is on a private mirror).
     const PUBLIC_REPO = "rabbittrix/vulto-io";
     const RELEASES_PAGE = `https://github.com/${PUBLIC_REPO}/releases/latest`;
     const RELEASE_API = `https://api.github.com/repos/${PUBLIC_REPO}/releases/latest`;
+    const SITE_BASE = `https://github.com/${PUBLIC_REPO}/raw/main/downloads`;
     const SITE_DOWNLOADS = {
-      windows: "./downloads/Vulto_1.0.0_x64-setup.exe",
-      windowsMsi: "./downloads/Vulto_1.0.0_x64_en-US.msi",
+      windows: `${SITE_BASE}/Vulto_1.0.0_x64-setup.exe`,
+      windowsMsi: `${SITE_BASE}/Vulto_1.0.0_x64_en-US.msi`,
       linuxAppImage: RELEASES_PAGE,
       linuxDeb: RELEASES_PAGE,
     };
