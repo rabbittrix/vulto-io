@@ -133,10 +133,16 @@
     const AUTHOR = { name: "Roberto de Souza", email: "rabbittrix@hotmail.com" };
     const BANK = { iban: "BE72 9670 8136 8616", bic: "TRWIBEB1XXX" };
     const PIX_KEY = "2417f0d5-b9e3-4b80-9ab0-70834da5d2a9";
-    // Public binaries live on rabbittrix/vulto-io (never the private vulto-source repo).
+    // Site-hosted installers (always available via Pages). GitHub Releases used when present.
     const PUBLIC_REPO = "rabbittrix/vulto-io";
     const RELEASES_PAGE = `https://github.com/${PUBLIC_REPO}/releases/latest`;
     const RELEASE_API = `https://api.github.com/repos/${PUBLIC_REPO}/releases/latest`;
+    const SITE_DOWNLOADS = {
+      windows: "./downloads/Vulto_1.0.0_x64-setup.exe",
+      windowsMsi: "./downloads/Vulto_1.0.0_x64_en-US.msi",
+      linuxAppImage: RELEASES_PAGE,
+      linuxDeb: RELEASES_PAGE,
+    };
 
     function pickAsset(assets, re) {
       const hit = (assets || []).find((a) => re.test(a.name));
@@ -144,30 +150,24 @@
     }
 
     async function resolveDownloads() {
-      const fallback = {
-        windows: RELEASES_PAGE,
-        windowsMsi: RELEASES_PAGE,
-        linuxAppImage: RELEASES_PAGE,
-        linuxDeb: RELEASES_PAGE,
-      };
       try {
         const res = await fetch(RELEASE_API, {
           headers: { Accept: "application/vnd.github+json" },
         });
-        if (!res.ok) return fallback;
+        if (!res.ok) return { ...SITE_DOWNLOADS };
         const data = await res.json();
         const assets = data.assets || [];
         return {
           windows:
             pickAsset(assets, /x64-setup\.exe$/i) ||
             pickAsset(assets, /-setup\.exe$/i) ||
-            RELEASES_PAGE,
-          windowsMsi: pickAsset(assets, /\.msi$/i) || RELEASES_PAGE,
-          linuxAppImage: pickAsset(assets, /\.AppImage$/i) || RELEASES_PAGE,
-          linuxDeb: pickAsset(assets, /\.deb$/i) || RELEASES_PAGE,
+            SITE_DOWNLOADS.windows,
+          windowsMsi: pickAsset(assets, /\.msi$/i) || SITE_DOWNLOADS.windowsMsi,
+          linuxAppImage: pickAsset(assets, /\.AppImage$/i) || SITE_DOWNLOADS.linuxAppImage,
+          linuxDeb: pickAsset(assets, /\.deb$/i) || SITE_DOWNLOADS.linuxDeb,
         };
       } catch {
-        return fallback;
+        return { ...SITE_DOWNLOADS };
       }
     }
 
@@ -448,12 +448,7 @@
     function App() {
       const [modalOpen, setModalOpen] = useState(false);
       const [tier, setTier] = useState("personal");
-      const [DOWNLOADS, setDownloads] = useState({
-        windows: RELEASES_PAGE,
-        windowsMsi: RELEASES_PAGE,
-        linuxAppImage: RELEASES_PAGE,
-        linuxDeb: RELEASES_PAGE,
-      });
+      const [DOWNLOADS, setDownloads] = useState({ ...SITE_DOWNLOADS });
       const openPay = useCallback((t) => {
         setTier(t);
         setModalOpen(true);
