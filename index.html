@@ -124,7 +124,7 @@
   </script>
 
   <script type="module">
-    import React, { useState, useCallback } from "react";
+    import React, { useState, useCallback, useEffect } from "react";
     import { createRoot } from "react-dom/client";
     import { motion, AnimatePresence } from "framer-motion";
 
@@ -133,14 +133,43 @@
     const AUTHOR = { name: "Roberto de Souza", email: "rabbittrix@hotmail.com" };
     const BANK = { iban: "BE72 9670 8136 8616", bic: "TRWIBEB1XXX" };
     const PIX_KEY = "2417f0d5-b9e3-4b80-9ab0-70834da5d2a9";
-    const RELEASE_BASE =
-      "https://github.com/rabbittrix/vulto-source/releases/latest/download";
-    const DOWNLOADS = {
-      windows: `${RELEASE_BASE}/Vulto_1.0.0_x64-setup.exe`,
-      windowsMsi: `${RELEASE_BASE}/Vulto_1.0.0_x64_en-US.msi`,
-      linuxAppImage: `${RELEASE_BASE}/vulto_1.0.0_amd64.AppImage`,
-      linuxDeb: `${RELEASE_BASE}/vulto_1.0.0_amd64.deb`,
-    };
+    // Public binaries live on rabbittrix/vulto-io (never the private vulto-source repo).
+    const PUBLIC_REPO = "rabbittrix/vulto-io";
+    const RELEASES_PAGE = `https://github.com/${PUBLIC_REPO}/releases/latest`;
+    const RELEASE_API = `https://api.github.com/repos/${PUBLIC_REPO}/releases/latest`;
+
+    function pickAsset(assets, re) {
+      const hit = (assets || []).find((a) => re.test(a.name));
+      return hit ? hit.browser_download_url : null;
+    }
+
+    async function resolveDownloads() {
+      const fallback = {
+        windows: RELEASES_PAGE,
+        windowsMsi: RELEASES_PAGE,
+        linuxAppImage: RELEASES_PAGE,
+        linuxDeb: RELEASES_PAGE,
+      };
+      try {
+        const res = await fetch(RELEASE_API, {
+          headers: { Accept: "application/vnd.github+json" },
+        });
+        if (!res.ok) return fallback;
+        const data = await res.json();
+        const assets = data.assets || [];
+        return {
+          windows:
+            pickAsset(assets, /x64-setup\.exe$/i) ||
+            pickAsset(assets, /-setup\.exe$/i) ||
+            RELEASES_PAGE,
+          windowsMsi: pickAsset(assets, /\.msi$/i) || RELEASES_PAGE,
+          linuxAppImage: pickAsset(assets, /\.AppImage$/i) || RELEASES_PAGE,
+          linuxDeb: pickAsset(assets, /\.deb$/i) || RELEASES_PAGE,
+        };
+      } catch {
+        return fallback;
+      }
+    }
 
     async function copyText(value) {
       try {
@@ -419,9 +448,25 @@
     function App() {
       const [modalOpen, setModalOpen] = useState(false);
       const [tier, setTier] = useState("personal");
+      const [DOWNLOADS, setDownloads] = useState({
+        windows: RELEASES_PAGE,
+        windowsMsi: RELEASES_PAGE,
+        linuxAppImage: RELEASES_PAGE,
+        linuxDeb: RELEASES_PAGE,
+      });
       const openPay = useCallback((t) => {
         setTier(t);
         setModalOpen(true);
+      }, []);
+
+      useEffect(() => {
+        let alive = true;
+        resolveDownloads().then((next) => {
+          if (alive) setDownloads(next);
+        });
+        return () => {
+          alive = false;
+        };
       }, []);
 
       const levels = [
