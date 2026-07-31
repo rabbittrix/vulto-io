@@ -107,6 +107,15 @@
     @media (prefers-reduced-motion: reduce) {
       .bg-noise { animation: none; }
     }
+    .dl-menu {
+      border: 1px solid rgba(0, 243, 255, 0.28);
+      background: rgba(3, 8, 10, 0.96);
+      box-shadow: 0 0 28px rgba(0, 243, 255, 0.12), inset 0 0 24px rgba(0, 243, 255, 0.03);
+    }
+    .dl-option:hover {
+      background: rgba(0, 243, 255, 0.08);
+      border-color: rgba(0, 243, 255, 0.45);
+    }
   </style>
 </head>
 <body class="font-mono antialiased overflow-x-hidden">
@@ -479,6 +488,150 @@
       );
     }
 
+    function DownloadChooser({ downloads }) {
+      const [open, setOpen] = useState(null); // "windows" | "linux" | null
+      const rootRef = React.useRef(null);
+
+      useEffect(() => {
+        function onDoc(e) {
+          if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(null);
+        }
+        function onKey(e) {
+          if (e.key === "Escape") setOpen(null);
+        }
+        document.addEventListener("mousedown", onDoc);
+        document.addEventListener("keydown", onKey);
+        return () => {
+          document.removeEventListener("mousedown", onDoc);
+          document.removeEventListener("keydown", onKey);
+        };
+      }, []);
+
+      const menus = {
+        windows: [
+          {
+            href: downloads.windows,
+            title: "NSIS Installer",
+            ext: ".exe",
+            note: "Recommended · current-user setup",
+          },
+          {
+            href: downloads.windowsMsi,
+            title: "MSI Package",
+            ext: ".msi",
+            note: "Enterprise / silent deploy",
+          },
+        ],
+        linux: [
+          {
+            href: downloads.linuxAppImage,
+            title: "AppImage",
+            ext: ".AppImage",
+            note: "Portable · no install",
+          },
+          {
+            href: downloads.linuxDeb,
+            title: "Debian / Ubuntu",
+            ext: ".deb",
+            note: "apt-friendly package",
+          },
+        ],
+      };
+
+      function toggle(platform) {
+        setOpen((cur) => (cur === platform ? null : platform));
+      }
+
+      function Option({ href, title, ext, note }) {
+        return h(
+          "a",
+          {
+            href,
+            className:
+              "dl-option flex items-start justify-between gap-4 px-4 py-3 border border-transparent transition-colors",
+            onClick: () => setOpen(null),
+          },
+          h(
+            "span",
+            null,
+            h("span", { className: "block text-sm text-white" }, title),
+            h("span", { className: "block text-[11px] text-white/40 mt-0.5" }, note)
+          ),
+          h(
+            "span",
+            { className: "shrink-0 font-display text-[10px] tracking-widest text-cyan uppercase mt-0.5" },
+            ext
+          )
+        );
+      }
+
+      return h(
+        "div",
+        { ref: rootRef, className: "mt-10 space-y-3", id: "download" },
+        h(
+          "div",
+          { className: "flex flex-wrap gap-3" },
+          h(
+            motion.button,
+            {
+              type: "button",
+              whileHover: { scale: 1.03 },
+              whileTap: { scale: 0.98 },
+              onClick: () => toggle("windows"),
+              "aria-expanded": open === "windows",
+              className:
+                "btn-primary inline-flex items-center gap-2 px-7 py-3.5 font-display text-sm tracking-[0.2em] uppercase",
+            },
+            "Download for Windows",
+            h("span", { className: "text-[10px] opacity-70" }, open === "windows" ? "▴" : "▾")
+          ),
+          h(
+            motion.button,
+            {
+              type: "button",
+              whileHover: { scale: 1.03 },
+              whileTap: { scale: 0.98 },
+              onClick: () => toggle("linux"),
+              "aria-expanded": open === "linux",
+              className:
+                "btn-ghost inline-flex items-center gap-2 px-6 py-3.5 font-display text-sm tracking-[0.2em] uppercase",
+            },
+            "Download for Linux",
+            h("span", { className: "text-[10px] opacity-70" }, open === "linux" ? "▴" : "▾")
+          ),
+          h(
+            "a",
+            {
+              href: "#license",
+              className:
+                "inline-flex items-center px-6 py-3.5 font-display text-sm tracking-[0.2em] uppercase border border-white/20 text-white/70 hover:text-cyan hover:border-cyan/40",
+            },
+            "Unlock tiers"
+          )
+        ),
+        open &&
+          h(
+            motion.div,
+            {
+              initial: { opacity: 0, y: -6 },
+              animate: { opacity: 1, y: 0 },
+              transition: { duration: 0.2 },
+              className: "dl-menu max-w-md overflow-hidden divide-y divide-white/10",
+              role: "menu",
+            },
+            h(
+              "p",
+              {
+                className:
+                  "px-4 py-2 text-[10px] font-display tracking-[0.25em] uppercase text-white/40",
+              },
+              open === "windows" ? "Choose Windows package" : "Choose Linux package"
+            ),
+            menus[open].map((item) => h(Option, { key: item.ext, ...item }))
+          )
+      );
+    }
+
     function App() {
       const [modalOpen, setModalOpen] = useState(false);
       const [tier, setTier] = useState("personal");
@@ -563,7 +716,7 @@
               h("a", { href: "#license", className: "hover:text-cyan" }, "License"),
               h(
                 "a",
-                { href: DOWNLOADS.windows, className: "text-cyan hover:text-white" },
+                { href: "#download", className: "text-cyan hover:text-white" },
                 "Download"
               )
             )
@@ -618,59 +771,7 @@
                 h("span", { className: "text-cyan" }, ".vlt"),
                 " Singularity."
               ),
-              h(
-                "div",
-                { className: "mt-10 flex flex-wrap gap-3" },
-                h(
-                  motion.a,
-                  {
-                    href: DOWNLOADS.windows,
-                    whileHover: { scale: 1.03 },
-                    whileTap: { scale: 0.98 },
-                    className:
-                      "btn-primary inline-flex items-center px-7 py-3.5 font-display text-sm tracking-[0.2em] uppercase",
-                  },
-                  "Download for Windows"
-                ),
-                h(
-                  motion.a,
-                  {
-                    href: DOWNLOADS.linuxAppImage,
-                    whileHover: { scale: 1.03 },
-                    whileTap: { scale: 0.98 },
-                    className:
-                      "btn-ghost inline-flex items-center px-6 py-3.5 font-display text-sm tracking-[0.2em] uppercase",
-                  },
-                  "Download for Linux"
-                ),
-                h(
-                  "a",
-                  {
-                    href: "#license",
-                    className:
-                      "inline-flex items-center px-6 py-3.5 font-display text-sm tracking-[0.2em] uppercase border border-white/20 text-white/70 hover:text-cyan hover:border-cyan/40",
-                  },
-                  "Unlock tiers"
-                )
-              ),
-              h(
-                "p",
-                { className: "mt-4 text-[11px] text-white/35" },
-                "Also: ",
-                h("a", { href: DOWNLOADS.windowsMsi, className: "text-cyan/70 hover:text-cyan" }, "MSI"),
-                " · ",
-                h(
-                  "a",
-                  { href: DOWNLOADS.linuxDeb, className: "text-cyan/70 hover:text-cyan" },
-                  ".deb"
-                ),
-                " · ",
-                h(
-                  "a",
-                  { href: DOWNLOADS.linuxAppImage, className: "text-cyan/70 hover:text-cyan" },
-                  "AppImage"
-                )
-              )
+              h(DownloadChooser, { downloads: DOWNLOADS }),
             ),
             h(
               motion.div,
