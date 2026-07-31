@@ -146,8 +146,8 @@
     const SITE_DOWNLOADS = {
       windows: `${SITE_BASE}/Vulto_1.0.0_x64-setup.exe`,
       windowsMsi: `${SITE_BASE}/Vulto_1.0.0_x64_en-US.msi`,
-      linuxAppImage: RELEASES_PAGE,
-      linuxDeb: RELEASES_PAGE,
+      linuxAppImage: `${SITE_BASE}/Vulto_1.0.0_amd64.AppImage`,
+      linuxDeb: `${SITE_BASE}/Vulto_1.0.0_amd64.deb`,
     };
 
     function pickAsset(assets, re) {
@@ -631,11 +631,22 @@
                   "Download for Windows"
                 ),
                 h(
+                  motion.a,
+                  {
+                    href: DOWNLOADS.linuxAppImage,
+                    whileHover: { scale: 1.03 },
+                    whileTap: { scale: 0.98 },
+                    className:
+                      "btn-ghost inline-flex items-center px-6 py-3.5 font-display text-sm tracking-[0.2em] uppercase",
+                  },
+                  "Download for Linux"
+                ),
+                h(
                   "a",
                   {
                     href: "#license",
                     className:
-                      "btn-ghost inline-flex items-center px-6 py-3.5 font-display text-sm tracking-[0.2em] uppercase",
+                      "inline-flex items-center px-6 py-3.5 font-display text-sm tracking-[0.2em] uppercase border border-white/20 text-white/70 hover:text-cyan hover:border-cyan/40",
                   },
                   "Unlock tiers"
                 )
@@ -648,11 +659,15 @@
                 " · ",
                 h(
                   "a",
-                  { href: DOWNLOADS.linuxAppImage, className: "text-cyan/70 hover:text-cyan" },
-                  "AppImage"
+                  { href: DOWNLOADS.linuxDeb, className: "text-cyan/70 hover:text-cyan" },
+                  ".deb"
                 ),
                 " · ",
-                h("a", { href: DOWNLOADS.linuxDeb, className: "text-cyan/70 hover:text-cyan" }, ".deb")
+                h(
+                  "a",
+                  { href: DOWNLOADS.linuxAppImage, className: "text-cyan/70 hover:text-cyan" },
+                  "AppImage"
+                )
               )
             ),
             h(
