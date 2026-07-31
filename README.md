@@ -168,7 +168,7 @@ CLI       :: --compress <path> · --extract <path>
 ## 📥 Acquire
 
 Latest binaries: **[Releases](../../releases/latest)**  
-Site entry: [`index.html`](./index.html) · **[vulto.io](https://vulto.io)**
+Site entry: [`index.html`](./index.html) · **[Live site](https://rabbittrix.github.io/vulto-io/)** · custom domain setup: [`CNAME.example.md`](./CNAME.example.md)
 
 ---
 
