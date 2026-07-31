@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vulto — The Last File Utility You’ll Ever Need</title>
+  <meta name="description" content="Vulto — ultra-fast neon file utility. Compress, extract, merge, split. Personal $19.99 · Business $34.99." />
+  <meta name="theme-color" content="#050505" />
+  <link rel="icon" href="./assets/vulto-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            void: "#050505",
+            cyan: "#00f3ff",
+            magenta: "#ff00ff",
+            lime: "#b8ff3c",
+          },
+          fontFamily: {
+            display: ["Orbitron", "sans-serif"],
+            mono: ["IBM Plex Mono", "ui-monospace", "monospace"],
+          },
+          boxShadow: {
+            cyan: "0 0 40px rgba(0,243,255,0.35)",
+            magenta: "0 0 40px rgba(255,0,255,0.35)",
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    :root {
+      --void: #050505;
+      --cyan: #00f3ff;
+      --magenta: #ff00ff;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--void);
+      color: #f4f4f5;
+    }
+    .grid-neon {
+      background-image:
+        linear-gradient(rgba(0, 243, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 243, 255, 0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+    .hero-glow {
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0, 243, 255, 0.18), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 85% 20%, rgba(255, 0, 255, 0.12), transparent 50%),
+        radial-gradient(ellipse 50% 35% at 10% 70%, rgba(184, 255, 60, 0.06), transparent 45%);
+    }
+    .btn-primary {
+      background: linear-gradient(90deg, #00f3ff, #00c8d4);
+      color: #050505;
+      box-shadow: 0 0 28px rgba(0, 243, 255, 0.45);
+    }
+    .btn-primary:hover { filter: brightness(1.08); }
+    .btn-ghost {
+      border: 1px solid rgba(255, 0, 255, 0.45);
+      color: #ff00ff;
+      box-shadow: 0 0 18px rgba(255, 0, 255, 0.15);
+    }
+    .price-glow:hover {
+      border-color: rgba(0, 243, 255, 0.55);
+      box-shadow: 0 0 32px rgba(0, 243, 255, 0.2);
+    }
+    .modal-backdrop {
+      background: rgba(5, 5, 5, 0.82);
+      backdrop-filter: blur(10px);
+    }
+    @keyframes pulse-line {
+      0%, 100% { opacity: 0.35; }
+      50% { opacity: 1; }
+    }
+    .pulse-line { animation: pulse-line 3s ease-in-out infinite; }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+  </style>
+</head>
+<body class="font-mono antialiased overflow-x-hidden">
+  <div id="root"></div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://esm.sh/react@18.3.1",
+      "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+      "framer-motion": "https://esm.sh/framer-motion@11.15.0?deps=react@18.3.1,react-dom@18.3.1"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import React, { useState, useCallback } from "react";
+    import { createRoot } from "react-dom/client";
+    import { motion, AnimatePresence } from "framer-motion";
+
+    const h = React.createElement;
+
+    const AUTHOR = {
+      name: "Roberto de Souza",
+      email: "rabbittrix@hotmail.com",
+    };
+
+    const BANK = {
+      iban: "BE72 9670 8136 8616",
+      bic: "TRWIBEB1XXX",
+    };
+
+    const PIX_KEY = "2417f0d5-b9e3-4b80-9ab0-70834da5d2a9";
+
+    const RELEASE_BASE =
+      "https://github.com/rabbittrix/vulto-source/releases/latest/download";
+
+    // Update these filenames to match your GitHub Release assets after tagging.
+    const DOWNLOADS = {
+      windows: `${RELEASE_BASE}/Vulto_1.0.0_x64-setup.exe`,
+      windowsMsi: `${RELEASE_BASE}/Vulto_1.0.0_x64_en-US.msi`,
+      linuxAppImage: `${RELEASE_BASE}/vulto_1.0.0_amd64.AppImage`,
+      linuxDeb: `${RELEASE_BASE}/vulto_1.0.0_amd64.deb`,
+    };
+
+    async function copyText(value) {
+      try {
+        await navigator.clipboard.writeText(value);
+        return true;
+      } catch {
+        const ta = document.createElement("textarea");
+        ta.value = value;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      }
+    }
+
+    function BrazilFlag({ className = "w-5 h-3.5" }) {
+      return h(
+        "svg",
+        { viewBox: "0 0 22 15", className, "aria-hidden": true },
+        h("rect", { width: "22", height: "15", fill: "#009c3b" }),
+        h("polygon", { points: "11,1.5 20.5,7.5 11,13.5 1.5,7.5", fill: "#ffdf00" }),
+        h("circle", { cx: "11", cy: "7.5", r: "3.2", fill: "#002776" })
+      );
+    }
+
+    function CopyField({ label, value, copyLabel = "Copy" }) {
+      const [copied, setCopied] = useState(false);
+      const onCopy = async () => {
+        if (!(await copyText(value))) return;
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1400);
+      };
+      return h(
+        "div",
+        { className: "border border-cyan/30 bg-black/50 p-3" },
+        h(
+          "div",
+          { className: "flex items-center justify-between gap-2 mb-1" },
+          h(
+            "p",
+            { className: "text-[10px] font-display tracking-[0.2em] text-white/45 uppercase" },
+            label
+          ),
+          h(
+            "button",
+            {
+              type: "button",
+              onClick: () => void onCopy(),
+              className:
+                "px-2 py-0.5 text-[10px] uppercase tracking-wider border border-cyan/40 text-cyan hover:bg-cyan/10",
+            },
+            copied ? "Copied!" : copyLabel
+          )
+        ),
+        h(
+          "p",
+          { className: "font-mono text-sm break-all text-cyan select-all" },
+          value
+        )
+      );
+    }
+
+    function PaymentModal({ open, onClose, tier }) {
+      const [tab, setTab] = useState("intl");
+      const amount = tier === "business" ? "$34.99" : "$19.99";
+      const tierName = tier === "business" ? "Business/Dev" : "Personal";
+      const mailto = `mailto:${AUTHOR.email}?subject=${encodeURIComponent(
+        `Vulto ${tierName} License`
+      )}&body=${encodeURIComponent(
+        `Hello Roberto,\n\nI paid ${amount} USD for a Vulto ${tierName} license.\n\nUser Hash:\n[PASTE FROM APP]\n\nPlease send my activation key.\n\nThanks.`
+      )}`;
+
+      return h(
+        AnimatePresence,
+        null,
+        open &&
+          h(
+            motion.div,
+            {
+              className: "fixed inset-0 z-50 flex items-center justify-center p-4",
+              initial: { opacity: 0 },
+              animate: { opacity: 1 },
+              exit: { opacity: 0 },
+            },
+            h("div", {
+              className: "absolute inset-0 modal-backdrop",
+              onClick: onClose,
+            }),
+            h(
+              motion.div,
+              {
+                initial: { scale: 0.94, y: 20, opacity: 0 },
+                animate: { scale: 1, y: 0, opacity: 1 },
+                exit: { scale: 0.96, opacity: 0 },
+                className:
+                  "relative w-full max-w-2xl max-h-[92vh] overflow-y-auto border border-magenta/40 bg-[#080808] shadow-magenta p-6",
+              },
+              h(
+                "div",
+                { className: "flex items-start justify-between gap-4 mb-5" },
+                h(
+                  "div",
+                  null,
+                  h(
+                    "h2",
+                    { className: "font-display text-2xl tracking-widest text-magenta" },
+                    "UNLOCK VULTO"
+                  ),
+                  h(
+                    "p",
+                    { className: "text-white/55 text-sm mt-1" },
+                    `${tierName} · `,
+                    h("span", { className: "text-lime" }, amount),
+                    " · hardware-bound"
+                  )
+                ),
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: onClose,
+                    className: "text-white/40 hover:text-white text-xl leading-none px-2",
+                    "aria-label": "Close",
+                  },
+                  "×"
+                )
+              ),
+              h(
+                "div",
+                { className: "flex gap-2 border-b border-white/10 mb-4" },
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: () => setTab("intl"),
+                    className: `px-3 py-2 text-[10px] font-display tracking-widest uppercase ${
+                      tab === "intl"
+                        ? "text-lime border-b-2 border-lime"
+                        : "text-white/40"
+                    }`,
+                  },
+                  "International"
+                ),
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: () => setTab("brasil"),
+                    className: `px-3 py-2 text-[10px] font-display tracking-widest uppercase flex items-center gap-2 ${
+                      tab === "brasil"
+                        ? "text-lime border-b-2 border-lime"
+                        : "text-white/40"
+                    }`,
+                  },
+                  h(BrazilFlag),
+                  "Brasil · PIX"
+                )
+              ),
+              tab === "intl"
+                ? h(
+                    "div",
+                    { className: "space-y-3" },
+                    h(CopyField, { label: "IBAN", value: BANK.iban }),
+                    h(CopyField, { label: "Swift / BIC", value: BANK.bic }),
+                    h(
+                      "div",
+                      {
+                        className:
+                          "border border-cyan/20 px-3 py-2 flex justify-between text-sm",
+                      },
+                      h("span", { className: "text-white/45 text-[10px] tracking-widest uppercase" }, "Amount"),
+                      h("span", { className: "text-lime" }, `${amount} USD`)
+                    )
+                  )
+                : h(
+                    "div",
+                    { className: "flex flex-col sm:flex-row gap-4" },
+                    h("img", {
+                      src: "./assets/pix_qr.png",
+                      alt: "PIX QR Code",
+                      className: "w-36 h-36 object-contain bg-white p-1 border border-cyan/30",
+                    }),
+                    h(
+                      "div",
+                      { className: "flex-1 space-y-3 min-w-0" },
+                      h(CopyField, {
+                        label: "Chave PIX",
+                        value: PIX_KEY,
+                        copyLabel: "Copiar Chave PIX",
+                      }),
+                      h(
+                        "div",
+                        {
+                          className:
+                            "border border-cyan/20 px-3 py-2 flex justify-between text-sm",
+                        },
+                        h("span", { className: "text-white/45 text-[10px] tracking-widest uppercase" }, "Valor"),
+                        h("span", { className: "text-lime" }, `${amount} USD`)
+                      )
+                    )
+                  ),
+              h(
+                "div",
+                { className: "mt-5 pt-4 border-t border-white/10 space-y-2 text-[12px] text-white/70 leading-relaxed" },
+                h(
+                  "p",
+                  null,
+                  h("span", { className: "text-cyan" }, "Step 1: "),
+                  `Pay ${amount} via the tab above.`
+                ),
+                h(
+                  "p",
+                  null,
+                  h("span", { className: "text-cyan" }, "Step 2: "),
+                  "Open Vulto → License and copy your ",
+                  h("strong", { className: "text-white" }, "User Hash"),
+                  "."
+                ),
+                h(
+                  "p",
+                  null,
+                  h("span", { className: "text-cyan" }, "Step 3: "),
+                  "Email the User Hash to ",
+                  h(
+                    "a",
+                    {
+                      href: mailto,
+                      className: "text-magenta underline hover:text-lime",
+                    },
+                    AUTHOR.email
+                  ),
+                  " to receive your activation key."
+                )
+              )
+            )
+          )
+      );
+    }
+
+    function App() {
+      const [modalOpen, setModalOpen] = useState(false);
+      const [tier, setTier] = useState("personal");
+
+      const openPay = useCallback((t) => {
+        setTier(t);
+        setModalOpen(true);
+      }, []);
+
+      return h(
+        React.Fragment,
+        null,
+        h(
+          "header",
+          { className: "relative z-20 border-b border-white/5" },
+          h(
+            "div",
+            {
+              className:
+                "max-w-6xl mx-auto px-5 py-4 flex items-center justify-between gap-4",
+            },
+            h(
+              "a",
+              { href: "#top", className: "flex items-center gap-3" },
+              h("img", {
+                src: "./assets/squirrel.svg",
+                alt: "",
+                className: "w-10 h-10",
+              }),
+              h(
+                "span",
+                {
+                  className:
+                    "font-display text-xl tracking-[0.28em] text-cyan drop-shadow-[0_0_12px_rgba(0,243,255,0.55)]",
+                },
+                "VULTO"
+              )
+            ),
+            h(
+              "nav",
+              { className: "hidden sm:flex items-center gap-6 text-[11px] tracking-widest uppercase text-white/50" },
+              h("a", { href: "#pricing", className: "hover:text-cyan" }, "Pricing"),
+              h("a", { href: "#activate", className: "hover:text-cyan" }, "Activate"),
+              h(
+                "a",
+                {
+                  href: DOWNLOADS.windows,
+                  className: "text-cyan hover:text-white",
+                },
+                "Download"
+              )
+            )
+          )
+        ),
+
+        // HERO — one composition
+        h(
+          "section",
+          {
+            id: "top",
+            className: "relative min-h-[100svh] flex flex-col justify-center hero-glow grid-neon overflow-hidden",
+          },
+          h("div", {
+            className:
+              "pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan to-transparent pulse-line",
+          }),
+          h(
+            "div",
+            {
+              className:
+                "relative z-10 max-w-6xl mx-auto px-5 py-20 md:py-28 grid md:grid-cols-[1.1fr_0.9fr] gap-12 items-center",
+            },
+            h(
+              motion.div,
+              {
+                initial: { opacity: 0, y: 24 },
+                animate: { opacity: 1, y: 0 },
+                transition: { duration: 0.7 },
+              },
+              h(
+                "p",
+                {
+                  className:
+                    "font-display text-5xl sm:text-6xl md:text-7xl tracking-[0.18em] text-cyan mb-6 drop-shadow-[0_0_28px_rgba(0,243,255,0.45)]",
+                },
+                "VULTO"
+              ),
+              h(
+                "h1",
+                {
+                  className:
+                    "font-display text-2xl sm:text-3xl md:text-4xl tracking-wide text-white leading-tight max-w-xl",
+                },
+                "The Last File Utility You’ll Ever Need"
+              ),
+              h(
+                "p",
+                { className: "mt-4 text-white/55 text-base md:text-lg max-w-md" },
+                "Faster than the speed of light."
+              ),
+              h(
+                "div",
+                { className: "mt-10 flex flex-wrap gap-3" },
+                h(
+                  motion.a,
+                  {
+                    href: DOWNLOADS.windows,
+                    whileHover: { scale: 1.03 },
+                    whileTap: { scale: 0.98 },
+                    className:
+                      "btn-primary inline-flex items-center px-7 py-3.5 font-display text-sm tracking-[0.2em] uppercase",
+                  },
+                  "Download for Windows"
+                ),
+                h(
+                  "a",
+                  {
+                    href: "#pricing",
+                    className:
+                      "btn-ghost inline-flex items-center px-6 py-3.5 font-display text-sm tracking-[0.2em] uppercase",
+                  },
+                  "View pricing"
+                )
+              ),
+              h(
+                "p",
+                { className: "mt-4 text-[11px] text-white/35" },
+                "Also: ",
+                h("a", { href: DOWNLOADS.windowsMsi, className: "text-cyan/70 hover:text-cyan" }, "MSI"),
+                " · ",
+                h("a", { href: DOWNLOADS.linuxAppImage, className: "text-cyan/70 hover:text-cyan" }, "AppImage"),
+                " · ",
+                h("a", { href: DOWNLOADS.linuxDeb, className: "text-cyan/70 hover:text-cyan" }, ".deb")
+              )
+            ),
+            h(
+              motion.div,
+              {
+                initial: { opacity: 0, scale: 0.92 },
+                animate: { opacity: 1, scale: 1 },
+                transition: { duration: 0.85, delay: 0.15 },
+                className: "relative flex justify-center md:justify-end",
+              },
+              h("div", {
+                className:
+                  "absolute inset-8 rounded-full bg-cyan/10 blur-3xl",
+              }),
+              h("img", {
+                src: "./assets/vulto-icon.png",
+                alt: "Vulto app",
+                className:
+                  "relative w-64 sm:w-80 md:w-[22rem] drop-shadow-[0_0_60px_rgba(0,243,255,0.35)]",
+              })
+            )
+          )
+        ),
+
+        // PRICING
+        h(
+          "section",
+          { id: "pricing", className: "relative py-24 border-t border-white/5" },
+          h(
+            "div",
+            { className: "max-w-6xl mx-auto px-5" },
+            h(
+              motion.h2,
+              {
+                initial: { opacity: 0, y: 16 },
+                whileInView: { opacity: 1, y: 0 },
+                viewport: { once: true },
+                className:
+                  "font-display text-3xl tracking-[0.2em] text-white mb-3",
+              },
+              "PRICING"
+            ),
+            h(
+              "p",
+              { className: "text-white/50 mb-12 max-w-xl text-sm" },
+              "Basic compress/extract stays free. Unlock advanced power with a one-time license."
+            ),
+            h(
+              "div",
+              { className: "grid md:grid-cols-2 gap-6" },
+              h(
+                motion.div,
+                {
+                  initial: { opacity: 0, y: 20 },
+                  whileInView: { opacity: 1, y: 0 },
+                  viewport: { once: true },
+                  className:
+                    "price-glow border border-white/10 bg-white/[0.02] p-8 transition-all",
+                },
+                h(
+                  "p",
+                  { className: "font-display text-xs tracking-[0.25em] text-cyan" },
+                  "PERSONAL"
+                ),
+                h(
+                  "p",
+                  { className: "mt-4 font-display text-4xl text-lime" },
+                  "$19.99"
+                ),
+                h(
+                  "ul",
+                  { className: "mt-6 space-y-2 text-sm text-white/60" },
+                  h("li", null, "AES-256 vault encryption"),
+                  h("li", null, "Remove trial notifications"),
+                  h("li", null, "Hardware-bound activation")
+                ),
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: () => openPay("personal"),
+                    className:
+                      "mt-8 w-full btn-primary py-3 font-display text-xs tracking-[0.2em] uppercase",
+                  },
+                  "Buy Personal"
+                )
+              ),
+              h(
+                motion.div,
+                {
+                  initial: { opacity: 0, y: 20 },
+                  whileInView: { opacity: 1, y: 0 },
+                  viewport: { once: true },
+                  transition: { delay: 0.08 },
+                  className:
+                    "price-glow border border-magenta/30 bg-magenta/[0.04] p-8 transition-all",
+                },
+                h(
+                  "p",
+                  { className: "font-display text-xs tracking-[0.25em] text-magenta" },
+                  "BUSINESS / DEV"
+                ),
+                h(
+                  "p",
+                  { className: "mt-4 font-display text-4xl text-lime" },
+                  "$34.99"
+                ),
+                h(
+                  "ul",
+                  { className: "mt-6 space-y-2 text-sm text-white/60" },
+                  h("li", null, "Everything in Personal"),
+                  h("li", null, "Merge / Split (PDF · DOCX)"),
+                  h("li", null, "Enterprise formats (.war · .jar · .ear)")
+                ),
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: () => openPay("business"),
+                    className:
+                      "mt-8 w-full btn-ghost py-3 font-display text-xs tracking-[0.2em] uppercase bg-magenta/10",
+                  },
+                  "Buy Business"
+                )
+              )
+            )
+          )
+        ),
+
+        // ACTIVATE
+        h(
+          "section",
+          {
+            id: "activate",
+            className: "relative py-24 border-t border-white/5 bg-gradient-to-b from-transparent to-cyan/[0.03]",
+          },
+          h(
+            "div",
+            { className: "max-w-3xl mx-auto px-5" },
+            h(
+              "h2",
+              {
+                className:
+                  "font-display text-3xl tracking-[0.2em] text-white mb-3",
+              },
+              "ACTIVATE"
+            ),
+            h(
+              "p",
+              { className: "text-white/50 mb-10 text-sm" },
+              "Three steps from payment to unlocked Vulto PRO / BIZ."
+            ),
+            h(
+              "ol",
+              { className: "space-y-6 text-sm text-white/70" },
+              [
+                ["Pay", "Use PIX (Brasil) or International bank transfer from the pricing buttons."],
+                ["Copy User Hash", "In the app: License panel → copy the KRLY User Hash."],
+                [
+                  "Email for your key",
+                  `Send the hash to ${AUTHOR.email} — you’ll receive a hardware-bound activation key.`,
+                ],
+              ].map(([title, body], i) =>
+                h(
+                  motion.li,
+                  {
+                    key: title,
+                    initial: { opacity: 0, x: -12 },
+                    whileInView: { opacity: 1, x: 0 },
+                    viewport: { once: true },
+                    transition: { delay: i * 0.08 },
+                    className: "flex gap-4",
+                  },
+                  h(
+                    "span",
+                    {
+                      className:
+                        "shrink-0 w-8 h-8 flex items-center justify-center border border-cyan/40 text-cyan font-display text-xs",
+                    },
+                    String(i + 1)
+                  ),
+                  h(
+                    "div",
+                    null,
+                    h("p", { className: "text-cyan font-display text-xs tracking-widest" }, title),
+                    h("p", { className: "mt-1" }, body)
+                  )
+                )
+              )
+            ),
+            h(
+              "a",
+              {
+                href: `mailto:${AUTHOR.email}?subject=${encodeURIComponent("Vulto License Activation")}`,
+                className: "inline-block mt-10 text-magenta underline hover:text-lime text-sm",
+              },
+              AUTHOR.email
+            )
+          )
+        ),
+
+        h(
+          "footer",
+          { className: "border-t border-white/5 py-8" },
+          h(
+            "div",
+            {
+              className:
+                "max-w-6xl mx-auto px-5 flex flex-col sm:flex-row justify-between gap-3 text-[11px] text-white/35",
+            },
+            h("p", null, `© ${new Date().getFullYear()} ${AUTHOR.name}. All rights reserved.`),
+            h("p", null, "Vulto.io · Neon-fast. Local-first.")
+          )
+        ),
+
+        h(PaymentModal, {
+          open: modalOpen,
+          onClose: () => setModalOpen(false),
+          tier,
+        })
+      );
+    }
+
+    createRoot(document.getElementById("root")).render(h(App));
+  </script>
+</body>
+</html>
