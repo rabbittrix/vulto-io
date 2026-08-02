@@ -188,6 +188,117 @@
       }
     }
 
+    function sortVersionTags(byVersion) {
+      return Object.entries(byVersion || {}).sort(([a], [b]) => {
+        const pa = a.replace(/^v/i, "").split(".").map(Number);
+        const pb = b.replace(/^v/i, "").split(".").map(Number);
+        for (let i = 0; i < Math.max(pa.length, pb.length); i += 1) {
+          const diff = (pb[i] || 0) - (pa[i] || 0);
+          if (diff !== 0) return diff;
+        }
+        return b.localeCompare(a);
+      });
+    }
+
+    async function loadDownloadStats() {
+      /** @type {{ total?: number, by_version?: Record<string, number>, last_download_at?: string|null, updated_at?: string|null }|null} */
+      let snapshot = null;
+      try {
+        const res = await fetch("./stats.json", { cache: "no-store" });
+        if (res.ok) snapshot = await res.json();
+      } catch {
+        /* offline / first deploy */
+      }
+
+      try {
+        const res = await fetch(
+          `https://api.github.com/repos/${PUBLIC_REPO}/releases?per_page=30`,
+          { headers: { Accept: "application/vnd.github+json" } },
+        );
+        if (res.ok) {
+          const releases = await res.json();
+          /** @type {Record<string, number>} */
+          const by_version = {};
+          let total = 0;
+          for (const rel of releases) {
+            if (rel.draft || rel.prerelease) continue;
+            const count = (rel.assets || []).reduce(
+              (sum, asset) => sum + (asset.download_count || 0),
+              0,
+            );
+            by_version[rel.tag_name] = count;
+            total += count;
+          }
+          return {
+            total,
+            by_version,
+            last_download_at: snapshot?.last_download_at ?? null,
+            updated_at: snapshot?.updated_at ?? null,
+          };
+        }
+      } catch {
+        /* rate limit / offline */
+      }
+
+      if (snapshot) {
+        return {
+          total: snapshot.total ?? 0,
+          by_version: snapshot.by_version ?? {},
+          last_download_at: snapshot.last_download_at ?? null,
+          updated_at: snapshot.updated_at ?? null,
+        };
+      }
+      return null;
+    }
+
+    function formatStatsDate(iso) {
+      if (!iso) return null;
+      try {
+        return new Intl.DateTimeFormat("en-GB", {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+          timeZone: "UTC",
+        }).format(new Date(iso));
+      } catch {
+        return iso.slice(0, 10);
+      }
+    }
+
+    function DownloadStats() {
+      const [stats, setStats] = useState(null);
+
+      useEffect(() => {
+        let active = true;
+        void loadDownloadStats().then((data) => {
+          if (active && data) setStats(data);
+        });
+        return () => {
+          active = false;
+        };
+      }, []);
+
+      if (!stats || !stats.total) return null;
+
+      const parts = [`Σ ${stats.total}`];
+      for (const [tag, count] of sortVersionTags(stats.by_version)) {
+        if (count > 0) parts.push(`${tag}: ${count}`);
+      }
+      const last = formatStatsDate(stats.last_download_at);
+      if (last) parts.push(`last ${last}`);
+
+      return h(
+        "p",
+        {
+          className:
+            "text-[9px] font-mono text-white/18 tracking-[0.12em] mt-3 select-none",
+          title: "GitHub Releases download telemetry (private footer)",
+          "aria-label": "Download statistics",
+        },
+        parts.join(" · "),
+      );
+    }
+
     async function copyText(value) {
       try {
         await navigator.clipboard.writeText(value);
@@ -1100,7 +1211,8 @@ TIER      :: Personal+ / active trial`
               "p",
               { className: "text-[11px] text-white/35" },
               `© ${new Date().getFullYear()} ${AUTHOR.name} · rabbittrix@hotmail.com`
-            )
+            ),
+            h(DownloadStats)
           )
         ),
 
