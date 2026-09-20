@@ -165,26 +165,82 @@
       return hit ? hit.browser_download_url : null;
     }
 
+    function mapReleaseAssets(assets, pinned) {
+      return {
+        windows:
+          pickAsset(assets, /x64-setup\.exe$/i) ||
+          pickAsset(assets, /-setup\.exe$/i) ||
+          pinned.windows,
+        windowsMsi: pickAsset(assets, /\.msi$/i) || pinned.windowsMsi,
+        linuxDeb: pickAsset(assets, /\.deb$/i) || pinned.linuxDeb,
+      };
+    }
+
+    async function fetchReleaseAssetsForTag(tag) {
+      const res = await fetch(
+        `https://api.github.com/repos/${PUBLIC_REPO}/releases/tags/${tag}`,
+        { headers: { Accept: "application/vnd.github+json" } },
+      );
+      if (!res.ok) return null;
+      const data = await res.json();
+      const assets = data.assets || [];
+      return assets.length ? assets : null;
+    }
+
+    async function fetchNewestReleaseAssets() {
+      const res = await fetch(
+        `https://api.github.com/repos/${PUBLIC_REPO}/releases?per_page=20`,
+        { headers: { Accept: "application/vnd.github+json" } },
+      );
+      if (!res.ok) return null;
+      const releases = await res.json();
+      const sorted = (releases || [])
+        .filter((r) => !r.draft && !r.prerelease && (r.assets || []).length > 0)
+        .sort((a, b) => {
+          const pa = String(a.tag_name).replace(/^v/i, "").split(".").map(Number);
+          const pb = String(b.tag_name).replace(/^v/i, "").split(".").map(Number);
+          for (let i = 0; i < Math.max(pa.length, pb.length); i += 1) {
+            const diff = (pb[i] || 0) - (pa[i] || 0);
+            if (diff !== 0) return diff;
+          }
+          return String(b.tag_name).localeCompare(String(a.tag_name));
+        });
+      return sorted[0]?.assets || null;
+    }
+
     async function resolveDownloads() {
-      // Never use /releases/latest — an older tag (e.g. v1.0.1) may still be “latest” on the public repo.
       const pinned = { ...SITE_DOWNLOADS };
       try {
-        const res = await fetch(RELEASE_TAG_API, {
-          headers: { Accept: "application/vnd.github+json" },
-        });
-        if (!res.ok) return pinned;
-        const data = await res.json();
-        const assets = data.assets || [];
-        return {
-          windows:
-            pickAsset(assets, /x64-setup\.exe$/i) ||
-            pickAsset(assets, /-setup\.exe$/i) ||
-            pinned.windows,
-          windowsMsi: pickAsset(assets, /\.msi$/i) || pinned.windowsMsi,
-          linuxDeb: pickAsset(assets, /\.deb$/i) || pinned.linuxDeb,
-        };
+        let assets = await fetchReleaseAssetsForTag(RELEASE_TAG);
+        let activeTag = RELEASE_TAG;
+        if (!assets) {
+          const res = await fetch(
+            `https://api.github.com/repos/${PUBLIC_REPO}/releases?per_page=20`,
+            { headers: { Accept: "application/vnd.github+json" } },
+          );
+          if (res.ok) {
+            const releases = await res.json();
+            const hit = (releases || [])
+              .filter((r) => !r.draft && !r.prerelease && (r.assets || []).length > 0)
+              .sort((a, b) => {
+                const pa = String(a.tag_name).replace(/^v/i, "").split(".").map(Number);
+                const pb = String(b.tag_name).replace(/^v/i, "").split(".").map(Number);
+                for (let i = 0; i < Math.max(pa.length, pb.length); i += 1) {
+                  const diff = (pb[i] || 0) - (pa[i] || 0);
+                  if (diff !== 0) return diff;
+                }
+                return String(b.tag_name).localeCompare(String(a.tag_name));
+              })[0];
+            if (hit) {
+              activeTag = hit.tag_name;
+              assets = hit.assets;
+            }
+          }
+        }
+        if (!assets) return { ...pinned, activeTag: RELEASE_TAG };
+        return { ...mapReleaseAssets(assets, pinned), activeTag };
       } catch {
-        return pinned;
+        return { ...pinned, activeTag: RELEASE_TAG };
       }
     }
 
@@ -741,6 +797,7 @@
       const [modalOpen, setModalOpen] = useState(false);
       const [tier, setTier] = useState("personal");
       const [DOWNLOADS, setDownloads] = useState({ ...SITE_DOWNLOADS });
+      const [downloadTag, setDownloadTag] = useState(RELEASE_TAG);
       const openPay = useCallback((t) => {
         setTier(t);
         setModalOpen(true);
@@ -749,7 +806,13 @@
       useEffect(() => {
         let alive = true;
         resolveDownloads().then((next) => {
-          if (alive) setDownloads(next);
+          if (!alive) return;
+          setDownloadTag(next.activeTag || RELEASE_TAG);
+          setDownloads({
+            windows: next.windows,
+            windowsMsi: next.windowsMsi,
+            linuxDeb: next.linuxDeb,
+          });
         });
         return () => {
           alive = false;
