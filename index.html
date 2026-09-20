@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Vulto — Reclaim your time. Secure your legacy.</title>
-  <meta name="description" content="Vulto 1.2: threat-aware compress/extract · PDF/DOCX convert · favicons · .vlt v3 vault · Merge/Split. Personal $19.99 · Business $34.99." />
+  <meta name="description" content="Vulto 1.2+: Link Grab (YouTube/Instagram MP3/MP4) · threat-aware compress · PDF↔DOCX (scanned pages) · Merge/Split · .vlt vault. Personal $19.99 · Business $34.99." />
   <meta name="theme-color" content="#050505" />
   <link rel="icon" href="./assets/vulto-icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -882,6 +882,15 @@
                 h("span", { className: "text-cyan" }, ".vlt"),
                 " Singularity."
               ),
+              h(
+                "p",
+                { className: "mt-3 text-white/45 text-xs md:text-sm max-w-lg leading-relaxed" },
+                "New in the latest build: ",
+                h("span", { className: "text-magenta" }, "Link Grab"),
+                " (yt-dlp · MP3/MP4) · scanned ",
+                h("span", { className: "text-cyan" }, "PDF ↔ DOCX"),
+                " · live download progress · Defender/ClamAV threat scan."
+              ),
               h(DownloadChooser, { downloads: DOWNLOADS }),
             ),
             h(
@@ -1026,28 +1035,70 @@ TIER      :: Personal+ / active trial`
             h(SectionTitle, {
               kicker: "🔗 OPS",
               title: "SMART OPERATIONS",
-              sub: "Threat-aware archives · Merge/Split · PDF↔DOCX convert · favicons · enterprise grid.",
+              sub: "Link Grab · threat-aware I/O · Convert · Merge/Split · enterprise archives.",
             }),
             h(
               "div",
-              { className: "grid md:grid-cols-2 gap-6" },
+              { className: "grid md:grid-cols-2 lg:grid-cols-3 gap-6" },
+              h(
+                "div",
+                { className: "panel panel-mag p-6" },
+                h(
+                  "p",
+                  { className: "font-display text-xs tracking-[0.25em] text-magenta mb-3" },
+                  "🎬 LINK GRAB"
+                ),
+                h(
+                  "p",
+                  { className: "text-sm text-white/60 leading-relaxed" },
+                  "Paste a YouTube or Instagram URL — save MP3 or MP4 to Downloads. Powered by yt-dlp + ffmpeg on your machine. Business tier."
+                )
+              ),
               h(
                 "div",
                 { className: "panel p-6" },
                 h(
                   "p",
                   { className: "font-display text-xs tracking-[0.25em] text-cyan mb-3" },
-                  "📄 PDF / DOCX FUSION"
+                  "📄 CONVERT"
                 ),
                 h(
                   "p",
                   { className: "text-sm text-white/60 leading-relaxed" },
-                  "Binary-level stitching of documents. No bloatware, no Adobe, no Word. Just pure data manipulation — pages, ranges, multi-range extract."
+                  "PDF → DOCX with text or embedded page images (Poppler). DOCX → PDF with top-aligned A4 pages. Images, favicon packs, LibreOffice when installed."
                 )
               ),
               h(
                 "div",
-                { className: "panel panel-mag p-6" },
+                { className: "panel p-6" },
+                h(
+                  "p",
+                  { className: "font-display text-xs tracking-[0.25em] text-lime mb-3" },
+                  "🛡️ THREAT SCAN"
+                ),
+                h(
+                  "p",
+                  { className: "text-sm text-white/60 leading-relaxed" },
+                  "Heuristics before compress; scan on extract. Windows Defender and optional ClamAV. Block or proceed with eyes open."
+                )
+              ),
+              h(
+                "div",
+                { className: "panel p-6" },
+                h(
+                  "p",
+                  { className: "font-display text-xs tracking-[0.25em] text-cyan mb-3" },
+                  "📄 MERGE / SPLIT"
+                ),
+                h(
+                  "p",
+                  { className: "text-sm text-white/60 leading-relaxed" },
+                  "Binary-level stitching and PDF page ranges. mmap zero-copy. No Adobe — pure local manipulation."
+                )
+              ),
+              h(
+                "div",
+                { className: "panel panel-mag p-6 md:col-span-2 lg:col-span-2" },
                 h(
                   "p",
                   { className: "font-display text-xs tracking-[0.25em] text-magenta mb-3" },
@@ -1056,7 +1107,7 @@ TIER      :: Personal+ / active trial`
                 h(
                   "p",
                   { className: "text-sm text-white/60 leading-relaxed" },
-                  "Native handling of .war, .jar, and .ear. Essential for the modern SysAdmin and Architect."
+                  "Native .war, .jar, and .ear alongside .vlt, zip, tar.gz, and 7z. Built for admins who live in the terminal and the desktop."
                 )
               )
             )
@@ -1134,8 +1185,9 @@ TIER      :: Personal+ / active trial`
                 h(
                   "ul",
                   { className: "mt-6 space-y-2 text-sm text-white/60" },
-                  h("li", null, "Full Merge/Split suite"),
-                  h("li", null, "Enterprise formats (.war · .jar · .ear)"),
+                  h("li", null, "Link Grab · YouTube / Instagram MP3/MP4"),
+                  h("li", null, "Convert · PDF↔DOCX · images · favicons"),
+                  h("li", null, "Full Merge/Split · enterprise formats (.war · .jar · .ear)"),
                   h("li", null, "Priority Neural Support")
                 ),
                 h(
