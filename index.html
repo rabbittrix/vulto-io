@@ -149,15 +149,15 @@
       "https://raw.githubusercontent.com/rabbittrix/vulto-io/main/assets/pix_qr.png";
     // Site-hosted installers on the public repo (works even if Pages is on a private mirror).
     const PUBLIC_REPO = "rabbittrix/vulto-io";
-    const RELEASE_TAG = "v1.2.2";
+    const RELEASE_TAG = "v1.2.3";
     const RELEASES_PAGE = `https://github.com/${PUBLIC_REPO}/releases/tag/${RELEASE_TAG}`;
     const RELEASE_TAG_API = `https://api.github.com/repos/${PUBLIC_REPO}/releases/tags/${RELEASE_TAG}`;
     // Installers live on GitHub Releases — not in the Pages tree (keeps the free site light).
     const RELEASE_DL = `https://github.com/${PUBLIC_REPO}/releases/download/${RELEASE_TAG}`;
     const SITE_DOWNLOADS = {
-      windows: `${RELEASE_DL}/Vulto_1.2.2_x64-setup.exe`,
-      windowsMsi: `${RELEASE_DL}/Vulto_1.2.2_x64_en-US.msi`,
-      linuxDeb: `${RELEASE_DL}/Vulto_1.2.2_amd64.deb`,
+      windows: `${RELEASE_DL}/Vulto_1.2.3_x64-setup.exe`,
+      windowsMsi: `${RELEASE_DL}/Vulto_1.2.3_x64_en-US.msi`,
+      linuxDeb: `${RELEASE_DL}/Vulto_1.2.3_amd64.deb`,
     };
 
     function pickAsset(assets, re) {
@@ -624,7 +624,7 @@
             href: downloads.windows,
             title: "NSIS Installer",
             ext: ".exe",
-            note: "File: Vulto_1.2.2_x64-setup.exe (hyphen before setup)",
+            note: "NSIS · hyphen before setup (x64-setup.exe)",
           },
           {
             href: downloads.windowsMsi,
