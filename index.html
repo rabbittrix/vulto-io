@@ -150,14 +150,13 @@
     // Site-hosted installers on the public repo (works even if Pages is on a private mirror).
     const PUBLIC_REPO = "rabbittrix/vulto-io";
     const RELEASE_TAG = "v1.2.2";
-    const RELEASES_PAGE = `https://github.com/${PUBLIC_REPO}/releases/latest`;
-    const RELEASE_API = `https://api.github.com/repos/${PUBLIC_REPO}/releases/latest`;
+    const RELEASES_PAGE = `https://github.com/${PUBLIC_REPO}/releases/tag/${RELEASE_TAG}`;
+    const RELEASE_TAG_API = `https://api.github.com/repos/${PUBLIC_REPO}/releases/tags/${RELEASE_TAG}`;
     // Installers live on GitHub Releases — not in the Pages tree (keeps the free site light).
     const RELEASE_DL = `https://github.com/${PUBLIC_REPO}/releases/download/${RELEASE_TAG}`;
     const SITE_DOWNLOADS = {
       windows: `${RELEASE_DL}/Vulto_1.2.2_x64-setup.exe`,
       windowsMsi: `${RELEASE_DL}/Vulto_1.2.2_x64_en-US.msi`,
-      linuxAppImage: `${RELEASE_DL}/Vulto_1.2.2_amd64.AppImage`,
       linuxDeb: `${RELEASE_DL}/Vulto_1.2.2_amd64.deb`,
     };
 
@@ -167,24 +166,25 @@
     }
 
     async function resolveDownloads() {
+      // Never use /releases/latest — an older tag (e.g. v1.0.1) may still be “latest” on the public repo.
+      const pinned = { ...SITE_DOWNLOADS };
       try {
-        const res = await fetch(RELEASE_API, {
+        const res = await fetch(RELEASE_TAG_API, {
           headers: { Accept: "application/vnd.github+json" },
         });
-        if (!res.ok) return { ...SITE_DOWNLOADS };
+        if (!res.ok) return pinned;
         const data = await res.json();
         const assets = data.assets || [];
         return {
           windows:
             pickAsset(assets, /x64-setup\.exe$/i) ||
             pickAsset(assets, /-setup\.exe$/i) ||
-            SITE_DOWNLOADS.windows,
-          windowsMsi: pickAsset(assets, /\.msi$/i) || SITE_DOWNLOADS.windowsMsi,
-          linuxAppImage: pickAsset(assets, /\.AppImage$/i) || SITE_DOWNLOADS.linuxAppImage,
-          linuxDeb: pickAsset(assets, /\.deb$/i) || SITE_DOWNLOADS.linuxDeb,
+            pinned.windows,
+          windowsMsi: pickAsset(assets, /\.msi$/i) || pinned.windowsMsi,
+          linuxDeb: pickAsset(assets, /\.deb$/i) || pinned.linuxDeb,
         };
       } catch {
-        return { ...SITE_DOWNLOADS };
+        return pinned;
       }
     }
 
@@ -635,16 +635,10 @@
         ],
         linux: [
           {
-            href: downloads.linuxAppImage,
-            title: "AppImage",
-            ext: ".AppImage",
-            note: "Portable · no install",
-          },
-          {
             href: downloads.linuxDeb,
             title: "Debian / Ubuntu",
             ext: ".deb",
-            note: "apt-friendly package",
+            note: "Recommended · includes bundled Link Grab / Convert tools",
           },
         ],
       };
@@ -890,6 +884,22 @@
                 " (yt-dlp · MP3/MP4) · scanned ",
                 h("span", { className: "text-cyan" }, "PDF ↔ DOCX"),
                 " · live download progress · Defender/ClamAV threat scan."
+              ),
+              h(
+                "p",
+                {
+                  className:
+                    "mt-6 text-[10px] font-display tracking-[0.28em] uppercase text-lime/80",
+                },
+                `Release ${RELEASE_TAG} · `,
+                h(
+                  "a",
+                  {
+                    href: RELEASES_PAGE,
+                    className: "text-cyan hover:text-white underline underline-offset-2",
+                  },
+                  "all packages"
+                )
               ),
               h(DownloadChooser, { downloads: DOWNLOADS }),
             ),

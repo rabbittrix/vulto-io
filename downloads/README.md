@@ -8,7 +8,6 @@ https://github.com/rabbittrix/vulto-io/releases/tag/v1.2.2
 
 - Windows NSIS: `Vulto_1.2.2_x64-setup.exe`
 - Windows MSI: `Vulto_1.2.2_x64_en-US.msi`
-- Linux AppImage: `Vulto_1.2.2_amd64.AppImage`
 - Linux deb: `Vulto_1.2.2_amd64.deb`
 
 Landing page: https://rabbittrix.github.io/vulto-io/
