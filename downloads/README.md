@@ -4,7 +4,7 @@ Installers are **not** stored in this Pages tree (GitHub free Pages stays small 
 
 Get them from the public release:
 
-https://github.com/rabbittrix/vulto-io/releases/tag/v1.2.5
+https://github.com/rabbittrix/vulto-io/releases
 
 - Windows NSIS: `Vulto_1.2.5_x64-setup.exe`
 - Windows MSI: `Vulto_1.2.5_x64_en-US.msi`

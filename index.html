@@ -150,8 +150,10 @@
     // Site-hosted installers on the public repo (works even if Pages is on a private mirror).
     const PUBLIC_REPO = "rabbittrix/vulto-io";
     const RELEASE_TAG = "v1.2.5";
-    const RELEASES_PAGE = `https://github.com/${PUBLIC_REPO}/releases/tag/${RELEASE_TAG}`;
-    const RELEASE_TAG_API = `https://api.github.com/repos/${PUBLIC_REPO}/releases/tags/${RELEASE_TAG}`;
+    const RELEASES_INDEX = `https://github.com/${PUBLIC_REPO}/releases`;
+    function releasesTagPage(tag) {
+      return `${RELEASES_INDEX}/tag/${encodeURIComponent(tag)}`;
+    }
     // Installers live on GitHub Releases — not in the Pages tree (keeps the free site light).
     const RELEASE_DL = `https://github.com/${PUBLIC_REPO}/releases/download/${RELEASE_TAG}`;
     const SITE_DOWNLOADS = {
@@ -237,10 +239,24 @@
             }
           }
         }
-        if (!assets) return { ...pinned, activeTag: RELEASE_TAG };
-        return { ...mapReleaseAssets(assets, pinned), activeTag };
+        if (!assets) {
+          return {
+            ...pinned,
+            activeTag: RELEASE_TAG,
+            releasesPage: RELEASES_INDEX,
+          };
+        }
+        return {
+          ...mapReleaseAssets(assets, pinned),
+          activeTag,
+          releasesPage: releasesTagPage(activeTag),
+        };
       } catch {
-        return { ...pinned, activeTag: RELEASE_TAG };
+        return {
+          ...pinned,
+          activeTag: RELEASE_TAG,
+          releasesPage: RELEASES_INDEX,
+        };
       }
     }
 
@@ -798,6 +814,7 @@
       const [tier, setTier] = useState("personal");
       const [DOWNLOADS, setDownloads] = useState({ ...SITE_DOWNLOADS });
       const [downloadTag, setDownloadTag] = useState(RELEASE_TAG);
+      const [releasesPage, setReleasesPage] = useState(RELEASES_INDEX);
       const openPay = useCallback((t) => {
         setTier(t);
         setModalOpen(true);
@@ -808,6 +825,7 @@
         resolveDownloads().then((next) => {
           if (!alive) return;
           setDownloadTag(next.activeTag || RELEASE_TAG);
+          setReleasesPage(next.releasesPage || RELEASES_INDEX);
           setDownloads({
             windows: next.windows,
             windowsMsi: next.windowsMsi,
@@ -958,7 +976,9 @@
                 h(
                   "a",
                   {
-                    href: RELEASES_PAGE,
+                    href: releasesPage,
+                    target: "_blank",
+                    rel: "noopener noreferrer",
                     className: "text-cyan hover:text-white underline underline-offset-2",
                   },
                   "all packages"
