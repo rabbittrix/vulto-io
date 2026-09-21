@@ -149,15 +149,15 @@
       "https://raw.githubusercontent.com/rabbittrix/vulto-io/main/assets/pix_qr.png";
     // Site-hosted installers on the public repo (works even if Pages is on a private mirror).
     const PUBLIC_REPO = "rabbittrix/vulto-io";
-    const RELEASE_TAG = "v1.2.3";
+    const RELEASE_TAG = "v1.2.4";
     const RELEASES_PAGE = `https://github.com/${PUBLIC_REPO}/releases/tag/${RELEASE_TAG}`;
     const RELEASE_TAG_API = `https://api.github.com/repos/${PUBLIC_REPO}/releases/tags/${RELEASE_TAG}`;
     // Installers live on GitHub Releases — not in the Pages tree (keeps the free site light).
     const RELEASE_DL = `https://github.com/${PUBLIC_REPO}/releases/download/${RELEASE_TAG}`;
     const SITE_DOWNLOADS = {
-      windows: `${RELEASE_DL}/Vulto_1.2.3_x64-setup.exe`,
-      windowsMsi: `${RELEASE_DL}/Vulto_1.2.3_x64_en-US.msi`,
-      linuxDeb: `${RELEASE_DL}/Vulto_1.2.3_amd64.deb`,
+      windows: `${RELEASE_DL}/Vulto_1.2.4_x64-setup.exe`,
+      windowsMsi: `${RELEASE_DL}/Vulto_1.2.4_x64_en-US.msi`,
+      linuxDeb: `${RELEASE_DL}/Vulto_1.2.4_amd64.deb`,
     };
 
     function pickAsset(assets, re) {
@@ -954,7 +954,7 @@
                   className:
                     "mt-6 text-[10px] font-display tracking-[0.28em] uppercase text-lime/80",
                 },
-                `Release ${RELEASE_TAG} · `,
+                `Downloads · ${downloadTag}${downloadTag !== RELEASE_TAG ? ` (newest available; ${RELEASE_TAG} building)` : ""} · `,
                 h(
                   "a",
                   {
