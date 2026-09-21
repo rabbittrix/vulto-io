@@ -1,7 +1,13 @@
 # Vulto downloads
 
-Installers for `v1.2.4` are on GitHub Releases (not in this Pages tree):
+Installers are **not** stored in this Pages tree (GitHub free Pages stays small and reliable).
 
-https://github.com/rabbittrix/vulto-io/releases/tag/v1.2.4
+Get them from the public release:
+
+https://github.com/rabbittrix/vulto-io/releases/tag/v1.2.5
+
+- Windows NSIS: `Vulto_1.2.5_x64-setup.exe`
+- Windows MSI: `Vulto_1.2.5_x64_en-US.msi`
+- Linux deb: `Vulto_1.2.5_amd64.deb`
 
 Landing page: https://rabbittrix.github.io/vulto-io/
